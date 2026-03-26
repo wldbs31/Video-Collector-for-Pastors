@@ -1,0 +1,2721 @@
+<!doctype html>
+<html class="light" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>The Video Collector 비디오컬렉터</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#1a1f36",
+              secondary: "#6366f1",
+              surface: "#ffffff",
+              "surface-dim": "#f0f2f8",
+              "on-surface": "#1a1f36",
+              "on-surface-variant": "#6b7280",
+              "outline-variant": "#e5e7eb",
+            },
+            fontFamily: {
+              headline: ["Manrope", "sans-serif"],
+              body: ["Inter", "sans-serif"],
+              label: ["Inter", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "0.75rem",
+              lg: "1rem",
+              xl: "1.25rem",
+              "2xl": "1.5rem",
+              "3xl": "2rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        background: linear-gradient(
+          160deg,
+          #dde4f5 0%,
+          #c8d0ec 40%,
+          #d4d8f0 70%,
+          #cdd5ee 100%
+        );
+        background-attachment: fixed;
+        color: #1a1f36;
+        font-family: "Inter", sans-serif;
+        overflow-x: hidden;
+        min-height: 100vh;
+      }
+      /* White card — primary surface */
+      .card {
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow:
+          0 2px 20px rgba(99, 102, 241, 0.06),
+          0 1px 4px rgba(0, 0, 0, 0.04);
+      }
+      .glass-panel {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.9);
+        border-radius: 20px;
+        box-shadow: 0 4px 24px rgba(99, 102, 241, 0.08);
+      }
+      .glass-card {
+        background: rgba(255, 255, 255, 0.5);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.7);
+        border-radius: 16px;
+      }
+      .glass-card-white {
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 2px 16px rgba(99, 102, 241, 0.08);
+        border: 1px solid rgba(229, 231, 235, 0.8);
+      }
+      /* Sidebar — white, clean */
+      .glass-sidebar {
+        background: #ffffff;
+        border-right: 1px solid rgba(229, 231, 235, 0.8);
+        box-shadow: 2px 0 20px rgba(99, 102, 241, 0.06);
+      }
+      /* Header — frosted white */
+      .glass-header {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-bottom: 1px solid rgba(229, 231, 235, 0.7);
+      }
+      .ivory-gradient {
+        background: transparent;
+      }
+      .primary-gradient {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      }
+      .secondary-gradient {
+        background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      }
+      .collect-btn-gradient {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      }
+      .accent-gradient {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      }
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+      .orb {
+        filter: blur(80px);
+        position: fixed;
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.45;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(99, 102, 241, 0.2);
+        border-radius: 10px;
+      }
+      /* Nav links */
+      .nav-link {
+        color: #6b7280;
+        border-radius: 12px;
+        transition: all 0.15s;
+      }
+      .nav-link:hover {
+        color: #1a1f36;
+        background: #f0f2f8;
+      }
+      .nav-item-active {
+        background: #1a1f36 !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 14px rgba(26, 31, 54, 0.2);
+      }
+      .nav-item-active .material-symbols-outlined {
+        color: #fff !important;
+      }
+      .screen {
+        display: none;
+      }
+      .screen.active {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
+      .ai-tool-header {
+        background: linear-gradient(135deg, #1a1f36 0%, #312e81 100%);
+      }
+      header {
+        -webkit-app-region: drag;
+      }
+      header input,
+      header button,
+      header a {
+        -webkit-app-region: no-drag;
+      }
+      aside {
+        -webkit-app-region: drag;
+      }
+      aside a,
+      aside button {
+        -webkit-app-region: no-drag;
+      }
+      .ai-panel.hidden {
+        display: none !important;
+      }
+      .translation-col {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        font-size: 13px;
+        line-height: 1.7;
+        color: #374151;
+      }
+      .translation-col h4 {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: #9ca3af;
+        margin-bottom: 10px;
+      }
+      @keyframes spin {
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes chaptersBar {
+        0% {
+          transform: scaleX(0);
+          transform-origin: left;
+        }
+        50% {
+          transform: scaleX(1);
+          transform-origin: left;
+        }
+        51% {
+          transform-origin: right;
+        }
+        100% {
+          transform: scaleX(0);
+          transform-origin: right;
+        }
+      }
+      .video-card {
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s;
+      }
+      .video-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 32px rgba(99, 102, 241, 0.15);
+      }
+      /* URL input on light bg */
+      .url-input-wrap {
+        background: #ffffff;
+        border-radius: 24px;
+        box-shadow:
+          0 8px 32px rgba(99, 102, 241, 0.12),
+          0 2px 8px rgba(0, 0, 0, 0.06);
+        border: 1px solid rgba(229, 231, 235, 0.8);
+      }
+      /* Section headings */
+      .section-label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #9ca3af;
+      }
+    </style>
+  </head>
+  <body class="flex min-h-screen">
+    <!-- Soft blue ambient orbs -->
+    <div
+      class="orb w-[500px] h-[500px] rounded-full"
+      style="background: #818cf8; top: -150px; right: -100px"
+    ></div>
+    <div
+      class="orb w-[400px] h-[400px] rounded-full"
+      style="background: #a5b4fc; bottom: -100px; left: 200px"
+    ></div>
+    <div
+      class="orb w-[300px] h-[300px] rounded-full"
+      style="background: #c7d2fe; top: 40%; right: 20%"
+    ></div>
+
+    <!-- ═══════════════════════════════════════════════
+     SIDEBAR — white, clean, organized
+═══════════════════════════════════════════════ -->
+    <aside
+      class="glass-sidebar h-screen w-64 fixed left-0 top-0 flex flex-col z-50"
+      style="-webkit-app-region: drag"
+    >
+      <!-- Logo area -->
+      <div class="px-6 pt-10 pb-4 border-b border-gray-100">
+        <div class="flex items-center gap-3 mb-4">
+          <div
+            class="w-9 h-9 rounded-xl accent-gradient flex items-center justify-center shadow-md shadow-indigo-200"
+          >
+            <span
+              class="material-symbols-outlined text-white text-[18px]"
+              style="font-variation-settings: &quot;FILL&quot; 1"
+              >video_library</span
+            >
+          </div>
+          <div>
+            <h1
+              class="text-sm font-black text-primary font-headline leading-tight"
+            >
+              The Video Collector
+            </h1>
+            <p
+              class="text-[10px] font-semibold text-gray-400 leading-none mt-0.5"
+            >
+              비디오컬렉터
+            </p>
+          </div>
+        </div>
+        <button
+          onclick="navigateTo('dashboard')"
+          class="w-full py-2.5 collect-btn-gradient text-white font-bold rounded-xl text-sm hover:opacity-90 transition-all active:scale-95 shadow-md shadow-indigo-200"
+          style="-webkit-app-region: no-drag"
+        >
+          + New Video
+        </button>
+      </div>
+
+      <!-- Nav links -->
+      <nav
+        class="flex-1 px-3 py-4 space-y-1"
+        id="sidebar-nav"
+        style="-webkit-app-region: drag"
+      >
+        <p class="section-label px-3 mb-2">Menu</p>
+        <a
+          class="nav-link flex items-center gap-3 px-3 py-2.5 cursor-pointer"
+          data-screen="dashboard"
+          style="-webkit-app-region: no-drag"
+        >
+          <span class="material-symbols-outlined text-[20px]">home</span>
+          <span class="text-sm font-semibold">Dashboard</span>
+        </a>
+        <a
+          class="nav-link flex items-center gap-3 px-3 py-2.5 cursor-pointer"
+          data-screen="gallery"
+          style="-webkit-app-region: no-drag"
+        >
+          <span class="material-symbols-outlined text-[20px]"
+            >video_library</span
+          >
+          <span class="text-sm font-semibold">Collection</span>
+        </a>
+        <a
+          class="nav-link flex items-center gap-3 px-3 py-2.5 cursor-pointer"
+          data-screen="settings"
+          style="-webkit-app-region: no-drag"
+        >
+          <span class="material-symbols-outlined text-[20px]">settings</span>
+          <span class="text-sm font-semibold">Settings</span>
+        </a>
+      </nav>
+
+      <!-- Download queue -->
+      <div id="sidebar-queue" class="hidden px-3 pb-3 space-y-2">
+        <p class="section-label px-1">Downloads</p>
+        <div
+          id="queue-items"
+          class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar"
+        ></div>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 border-t border-gray-100">
+        <p class="text-[10px] text-gray-400 font-medium">
+          v1.0.0 · Video Downloader App
+        </p>
+      </div>
+    </aside>
+
+    <!-- ═══════════════════════════════════════════════
+     MAIN CONTENT WRAPPER
+═══════════════════════════════════════════════ -->
+    <main class="flex-1 flex flex-col ml-64 relative" style="z-index: 1">
+      <!-- TOP NAV -->
+      <header
+        class="glass-header fixed top-0 w-[calc(100%-16rem)] z-40 flex items-center px-8 h-16"
+      >
+        <span
+          id="page-title"
+          class="text-base font-bold text-primary font-headline tracking-tight"
+          >Dashboard</span
+        >
+      </header>
+
+      <!-- Content area (screens swap here) -->
+      <div
+        class="pt-16 flex-1 overflow-y-auto custom-scrollbar"
+        id="content-area"
+      >
+        <!-- ─────────────────────────────────────────
+         SCREEN 1: DASHBOARD
+    ───────────────────────────────────────── -->
+        <div class="screen active p-16 space-y-20" id="screen-dashboard">
+          <!-- Hero / URL collector -->
+          <section class="max-w-4xl mx-auto text-center space-y-10 pt-10">
+            <div class="space-y-4">
+              <h2
+                class="text-6xl font-headline font-extrabold tracking-tighter text-primary"
+              >
+                📂 비디오 <span class="text-secondary">컬렉터</span>
+              </h2>
+              <p
+                class="max-w-xl mx-auto font-body text-lg leading-relaxed text-on-surface-variant"
+              >
+                링크를 붙여넣거나 Google Extension 을 사용해주세요.
+              </p>
+            </div>
+            <!-- URL input -->
+            <div class="relative max-w-2xl mx-auto">
+              <div class="url-input-wrap flex items-center p-2">
+                <div class="flex-1 flex items-center px-4">
+                  <span class="material-symbols-outlined text-secondary mr-3"
+                    >link</span
+                  >
+                  <input
+                    id="url-input"
+                    class="w-full bg-transparent border-none text-primary placeholder:text-gray-400 focus:ring-0 text-base font-body py-3.5 outline-none"
+                    placeholder="Paste YouTube URL..."
+                    type="text"
+                    onkeydown="if (event.key === 'Enter') collectVideo();"
+                  />
+                </div>
+                <button
+                  onclick="collectVideo()"
+                  class="collect-btn-gradient text-white px-7 py-3.5 rounded-2xl font-bold text-sm tracking-wide hover:opacity-90 transition-all shadow-lg shadow-indigo-200 uppercase"
+                >
+                  Collect
+                </button>
+              </div>
+              <p
+                id="collect-status"
+                class="text-sm mt-3 text-center font-medium text-secondary hidden"
+              ></p>
+              <!-- Loading bar — shown while fetching title -->
+              <div
+                id="collect-progress"
+                class="hidden mt-3 rounded-full overflow-hidden h-1.5"
+                style="background: #e0e7ff"
+              >
+                <div
+                  class="h-full rounded-full collect-btn-gradient"
+                  style="
+                    width: 100%;
+                    animation: chaptersBar 1.8s ease-in-out infinite;
+                    transform-origin: left;
+                  "
+                ></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Recent Collections -->
+          <section class="space-y-8">
+            <div class="flex items-end justify-between px-2">
+              <div class="space-y-2">
+                <h3 class="text-2xl font-headline font-bold text-primary">
+                  Recent Collections
+                </h3>
+                <div class="h-1.5 w-16 rounded-full accent-gradient"></div>
+              </div>
+              <button
+                onclick="navigateTo('gallery')"
+                class="text-sm font-bold text-secondary hover:opacity-80 transition-colors flex items-center gap-2"
+              >
+                Browse Collection
+                <span class="material-symbols-outlined text-lg"
+                  >arrow_right_alt</span
+                >
+              </button>
+            </div>
+            <div
+              id="recent-videos"
+              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
+              <!-- Populated by JS -->
+              <div
+                class="col-span-3 text-center py-12 text-slate-400 font-medium text-sm"
+                id="no-videos-msg"
+              >
+                No videos collected yet. Paste a YouTube URL above to get
+                started.
+              </div>
+            </div>
+          </section>
+
+          <!-- Feature cards -->
+          <!-- <section class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div
+              class="p-10 rounded-[2rem] bg-white border border-slate-100 space-y-5 hover:shadow-xl transition-all hover:-translate-y-1"
+            >
+              <div
+                class="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center text-primary"
+              >
+                <span class="material-symbols-outlined text-2xl">bolt</span>
+              </div>
+              <h4
+                class="text-xl font-headline font-extrabold text-primary tracking-tight"
+              >
+                Archival Speed
+              </h4>
+              <p
+                class="text-on-surface-variant text-sm font-body leading-relaxed opacity-80"
+              >
+                Multi-threaded engine processes datasets 10× faster than
+                traditional tools.
+              </p>
+            </div>
+            <div
+              class="p-10 rounded-[2rem] bg-white border border-slate-100 space-y-5 hover:shadow-xl transition-all hover:-translate-y-1"
+            >
+              <div
+                class="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center text-primary"
+              >
+                <span class="material-symbols-outlined text-2xl">verified</span>
+              </div>
+              <h4
+                class="text-xl font-headline font-extrabold text-primary tracking-tight"
+              >
+                Lossless Fidelity
+              </h4>
+              <p
+                class="text-on-surface-variant text-sm font-body leading-relaxed opacity-80"
+              >
+                Extraction at the source stream level preserving every bit of
+                original data.
+              </p>
+            </div>
+            <div
+              class="p-10 rounded-[2rem] bg-white border border-slate-100 space-y-5 hover:shadow-xl transition-all hover:-translate-y-1"
+            >
+              <div
+                class="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center text-primary"
+              >
+                <span class="material-symbols-outlined text-2xl"
+                  >encrypted</span
+                >
+              </div>
+              <h4
+                class="text-xl font-headline font-extrabold text-primary tracking-tight"
+              >
+                Sovereign Privacy
+              </h4>
+              <p
+                class="text-on-surface-variant text-sm font-body leading-relaxed opacity-80"
+              >
+                End-to-end encryption with zero-knowledge metadata storage. Your
+                archive only.
+              </p>
+            </div>
+          </section> -->
+        </div>
+
+        <!-- ─────────────────────────────────────────
+         SCREEN 2: GALLERY
+    ───────────────────────────────────────── -->
+        <div class="screen p-10 space-y-10" id="screen-gallery">
+          <!-- Filter bar -->
+          <!-- Collection: search bar on top, grid below -->
+          <section
+            class="flex flex-col md:flex-row md:items-end justify-between gap-6 mt-4"
+          >
+            <div class="space-y-1">
+              <h1
+                class="text-3xl font-headline font-extrabold tracking-tight text-primary"
+              >
+                Collection
+              </h1>
+              <p class="font-medium text-sm text-on-surface-variant">
+                Your personal archive of collected media.
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              <select
+                id="gallery-sort"
+                onchange="
+                  searchAndRender(
+                    document.getElementById('organize-search').value,
+                  )
+                "
+                class="card px-3 py-1.5 text-xs font-semibold text-primary outline-none border-0 cursor-pointer rounded-xl"
+              >
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+              </select>
+              <div class="flex p-1 rounded-xl" style="background: #f0f2f8">
+                <button
+                  onclick="filterGallery('all', this)"
+                  class="filter-btn px-5 py-1.5 rounded-lg text-xs font-bold bg-white text-primary shadow-sm"
+                >
+                  All
+                </button>
+                <button
+                  onclick="filterGallery('mp4', this)"
+                  class="filter-btn px-5 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-primary transition-colors"
+                >
+                  MP4
+                </button>
+                <button
+                  onclick="filterGallery('mp3', this)"
+                  class="filter-btn px-5 py-1.5 rounded-lg text-xs font-semibold text-gray-500 hover:text-primary transition-colors"
+                >
+                  MP3
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Archive search bar -->
+          <div class="ai-tool-header rounded-2xl p-5 space-y-4">
+            <div class="flex items-center gap-3">
+              <div class="p-2 bg-white/10 rounded-lg">
+                <span class="material-symbols-outlined text-secondary"
+                  >manage_search</span
+                >
+              </div>
+              <div>
+                <h3 class="font-headline font-bold text-white text-sm">
+                  Archive Search
+                </h3>
+                <p
+                  class="text-[10px] text-white/60 font-bold uppercase tracking-widest"
+                >
+                  Search all titles, transcripts and tags
+                </p>
+              </div>
+            </div>
+            <div class="relative">
+              <span
+                class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-white/50 text-sm"
+                >search</span
+              >
+              <input
+                id="organize-search"
+                oninput="searchAndRender(this.value)"
+                class="w-full bg-white/10 border border-white/20 rounded-xl py-3 pl-11 pr-4 text-sm text-white placeholder:text-white/40 focus:outline-none focus:ring-1 focus:ring-secondary/50 transition-all"
+                placeholder="Search by keyword, title, or tag..."
+                type="text"
+              />
+            </div>
+            <div class="flex gap-2 flex-wrap">
+              <span
+                class="text-[10px] font-bold text-white/50 uppercase tracking-widest self-center"
+                >Filter:</span
+              >
+              <div id="tag-filter-pills" class="flex gap-2 flex-wrap"></div>
+            </div>
+          </div>
+
+          <!-- Video grid -->
+          <section
+            id="gallery-grid"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          >
+            <div
+              class="col-span-4 text-center py-20 text-slate-400 font-medium text-sm"
+              id="gallery-empty"
+            >
+              No videos yet. Click + New Video to get started.
+            </div>
+          </section>
+        </div>
+
+        <!-- ─────────────────────────────────────────
+         SCREEN: VIDEO DETAIL
+    ───────────────────────────────────────── -->
+        <div class="screen pt-8 pb-10" id="screen-detail">
+          <section class="p-8 lg:p-12 flex-1">
+            <div class="max-w-7xl mx-auto flex flex-col lg:flex-row gap-10">
+              <!-- Left: player + actions -->
+              <div class="w-full lg:w-3/5 space-y-8">
+                <div class="flex items-center gap-4">
+                  <button
+                    onclick="navigateTo('gallery')"
+                    class="w-10 h-10 rounded-xl flex items-center justify-center bg-white text-primary hover:bg-gray-50 transition-colors shadow-sm border border-gray-100"
+                  >
+                    <span class="material-symbols-outlined">arrow_back</span>
+                  </button>
+                  <div>
+                    <h2
+                      id="detail-title"
+                      class="font-headline text-2xl font-bold tracking-tight text-primary"
+                    >
+                      Select a video from Collection
+                    </h2>
+                    <p
+                      id="detail-meta"
+                      class="text-sm text-on-surface-variant font-medium"
+                    >
+                      —
+                    </p>
+                  </div>
+                </div>
+                <!-- Video player -->
+                <div
+                  class="rounded-3xl overflow-hidden relative shadow-2xl shadow-slate-200 border border-white bg-black"
+                  style="aspect-ratio: 16/9"
+                >
+                  <video
+                    id="video-player"
+                    controls
+                    class="w-full h-full"
+                    style="display: none"
+                  ></video>
+                  <img
+                    id="detail-thumb"
+                    alt="Video Preview"
+                    class="w-full h-full object-cover"
+                    src="https://placehold.co/800x450/e0f2fe/002244?text=Select+a+video"
+                  />
+                  <div
+                    id="player-overlay"
+                    class="absolute inset-0 flex items-center justify-center bg-primary/30 cursor-pointer"
+                    onclick="playVideo()"
+                  >
+                    <div
+                      class="w-16 h-16 rounded-full primary-gradient flex items-center justify-center shadow-2xl hover:scale-110 transition-transform"
+                    >
+                      <span
+                        class="material-symbols-outlined text-white text-3xl"
+                        style="font-variation-settings: &quot;FILL&quot; 1"
+                        >play_arrow</span
+                      >
+                    </div>
+                  </div>
+                </div>
+                <!-- Download format cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <button
+                    id="btn-mp4"
+                    onclick="downloadAs('mp4')"
+                    class="glass-card-white flex items-center justify-between p-5 rounded-3xl hover:shadow-lg transition-all group text-left"
+                  >
+                    <div class="flex items-center gap-4">
+                      <div
+                        class="w-12 h-12 rounded-2xl flex items-center justify-center"
+                        style="background: rgba(26, 5, 51, 0.08)"
+                      >
+                        <span class="material-symbols-outlined text-primary"
+                          >movie</span
+                        >
+                      </div>
+                      <div>
+                        <p class="font-bold text-primary">Archive as MP4</p>
+                        <p class="text-xs text-slate-500">
+                          Select quality below
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors"
+                      >download</span
+                    >
+                  </button>
+                  <button
+                    id="btn-mp3"
+                    onclick="downloadAs('mp3')"
+                    class="glass-card-white flex items-center justify-between p-5 rounded-3xl hover:shadow-lg transition-all group text-left"
+                  >
+                    <div class="flex items-center gap-4">
+                      <div
+                        class="w-12 h-12 rounded-2xl flex items-center justify-center"
+                        style="background: rgba(26, 5, 51, 0.08)"
+                      >
+                        <span class="material-symbols-outlined text-primary"
+                          >audiotrack</span
+                        >
+                      </div>
+                      <div>
+                        <p class="font-bold text-primary">Archive as MP3</p>
+                        <p class="text-xs text-slate-500">
+                          Audio only · 320kbps
+                        </p>
+                      </div>
+                    </div>
+                    <span
+                      class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors"
+                      >download</span
+                    >
+                  </button>
+                </div>
+                <!-- Quality picker -->
+                <div class="flex items-center gap-3 flex-wrap">
+                  <span
+                    class="text-xs font-bold text-on-surface-variant uppercase tracking-widest"
+                    >Quality:</span
+                  >
+                  <button
+                    onclick="setQuality(this, '2160p')"
+                    class="quality-btn px-4 py-1.5 rounded-full text-xs font-bold border border-gray-200 text-gray-500 hover:border-secondary hover:text-secondary transition-all bg-white"
+                  >
+                    4K
+                  </button>
+                  <button
+                    onclick="setQuality(this, '1080p')"
+                    class="quality-btn px-4 py-1.5 rounded-full text-xs font-bold border border-secondary text-secondary bg-indigo-50 transition-all"
+                  >
+                    1080p
+                  </button>
+                  <button
+                    onclick="setQuality(this, '720p')"
+                    class="quality-btn px-4 py-1.5 rounded-full text-xs font-bold border border-gray-200 text-gray-500 hover:border-secondary hover:text-secondary transition-all bg-white"
+                  >
+                    720p
+                  </button>
+                  <button
+                    onclick="setQuality(this, '480p')"
+                    class="quality-btn px-4 py-1.5 rounded-full text-xs font-bold border border-gray-200 text-gray-500 hover:border-secondary hover:text-secondary transition-all bg-white"
+                  >
+                    480p
+                  </button>
+                </div>
+                <div
+                  id="download-status"
+                  class="flex items-center gap-3 p-4 rounded-xl bg-primary/5 border border-primary/10 hidden"
+                >
+                  <span class="material-symbols-outlined text-primary"
+                    >info</span
+                  >
+                  <p
+                    class="text-sm text-primary/80 font-medium"
+                    id="download-status-msg"
+                  >
+                    Ready.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Right: AI panel with tabs -->
+              <div
+                class="w-full lg:w-2/5 flex flex-col"
+                style="min-height: 700px"
+              >
+                <div
+                  class="glass-panel rounded-3xl flex flex-col h-full border border-white shadow-2xl overflow-hidden"
+                >
+                  <!-- Tab header -->
+                  <div class="p-4 ai-tool-header text-white">
+                    <div class="flex items-center gap-3 mb-4">
+                      <div class="p-2 bg-white/10 rounded-lg">
+                        <span class="material-symbols-outlined text-secondary"
+                          >auto_awesome</span
+                        >
+                      </div>
+                      <div>
+                        <h3 class="font-headline font-bold text-lg">
+                          AI Tools
+                        </h3>
+                        <p
+                          class="text-[10px] text-white/60 font-bold uppercase tracking-widest mt-0.5"
+                        >
+                          Powered by Claude
+                        </p>
+                      </div>
+                    </div>
+                    <!-- Tabs -->
+                    <div class="flex gap-1 bg-white/10 rounded-xl p-1">
+                      <button
+                        onclick="switchAiTab('tags')"
+                        id="ai-tab-tags"
+                        class="ai-tab flex-1 py-2 rounded-lg text-xs font-bold transition-all bg-white text-primary"
+                      >
+                        Tags
+                      </button>
+                      <button
+                        onclick="switchAiTab('summary')"
+                        id="ai-tab-summary"
+                        class="ai-tab flex-1 py-2 rounded-lg text-xs font-bold transition-all text-white/70 hover:text-white"
+                      >
+                        Summary
+                      </button>
+                      <button
+                        onclick="switchAiTab('translate')"
+                        id="ai-tab-translate"
+                        class="ai-tab flex-1 py-2 rounded-lg text-xs font-bold transition-all text-white/70 hover:text-white"
+                      >
+                        Translate
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Tab: TAGS -->
+                  <div
+                    id="ai-panel-tags"
+                    class="ai-panel flex-1 p-6 space-y-5 overflow-y-auto custom-scrollbar"
+                  >
+                    <p class="text-xs text-slate-500 leading-relaxed">
+                      Select tags or add your own. Tags make videos searchable
+                      in Collection.
+                    </p>
+                    <div id="tag-list" class="space-y-2"></div>
+                    <div class="flex gap-2 pt-2">
+                      <input
+                        id="custom-tag-input"
+                        type="text"
+                        placeholder="Add custom tag..."
+                        onkeydown="if (event.key === 'Enter') addCustomTag();"
+                        class="flex-1 bg-slate-50 border border-slate-200 rounded-lg py-2 px-3 text-sm text-primary placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 focus:border-primary/40 outline-none"
+                      />
+                      <button
+                        onclick="addCustomTag()"
+                        class="px-3 py-2 bg-primary text-white text-xs font-bold rounded-lg hover:bg-sky-900 transition-all"
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Tab: SUMMARY -->
+                  <div
+                    id="ai-panel-summary"
+                    class="ai-panel hidden flex-1 flex flex-col overflow-hidden"
+                  >
+                    <div
+                      class="px-6 pt-5 pb-3 flex items-center justify-between"
+                    >
+                      <span
+                        class="text-[10px] font-bold text-slate-500 uppercase tracking-widest"
+                        >Summary Language</span
+                      >
+                      <div
+                        class="flex gap-1 p-0.5 rounded-lg"
+                        style="background: #f0f2f8"
+                      >
+                        <button
+                          onclick="setSummaryLang('en')"
+                          id="summary-lang-en"
+                          class="summary-lang-btn px-3 py-1 rounded-md text-xs font-bold bg-white text-primary shadow-sm transition-all"
+                        >
+                          EN
+                        </button>
+                        <button
+                          onclick="setSummaryLang('ko')"
+                          id="summary-lang-ko"
+                          class="summary-lang-btn px-3 py-1 rounded-md text-xs font-semibold text-gray-500 transition-all"
+                        >
+                          한국어
+                        </button>
+                      </div>
+                    </div>
+                    <div
+                      id="summary-content"
+                      class="flex-1 overflow-y-auto custom-scrollbar px-6 pb-4"
+                    >
+                      <p class="text-xs text-slate-400 text-center pt-8">
+                        No summary yet. Click Generate below.
+                      </p>
+                    </div>
+                    <div class="p-4 border-t border-gray-100">
+                      <button
+                        onclick="generateSummary()"
+                        id="summary-btn"
+                        class="w-full py-3 rounded-xl collect-btn-gradient text-white text-xs font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                      >
+                        <span class="material-symbols-outlined text-sm"
+                          >auto_awesome</span
+                        >
+                        Generate Summary
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Tab: TRANSLATE -->
+                  <div
+                    id="ai-panel-translate"
+                    class="ai-panel hidden flex-1 flex flex-col overflow-hidden"
+                  >
+                    <!-- Controls -->
+                    <div
+                      class="px-4 pt-4 pb-3 border-b border-gray-100 space-y-3"
+                    >
+                      <div class="flex items-center justify-between gap-2">
+                        <select
+                          id="translate-direction"
+                          class="rounded-lg py-1.5 px-3 text-xs font-semibold text-primary outline-none border border-gray-200 bg-white"
+                        >
+                          <option value="en-ko">English → Korean</option>
+                          <option value="ko-en">Korean → English</option>
+                        </select>
+                        <button
+                          onclick="generateTranslation()"
+                          id="translate-btn"
+                          class="px-4 py-1.5 rounded-lg collect-btn-gradient text-white text-xs font-bold hover:opacity-90 transition-all flex items-center gap-1.5"
+                        >
+                          <span class="material-symbols-outlined text-sm"
+                            >translate</span
+                          >
+                          Translate
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Status area -->
+                    <div
+                      class="flex-1 flex flex-col items-center justify-center p-6 gap-5"
+                    >
+                      <!-- Idle state -->
+                      <div id="translate-idle" class="text-center space-y-2">
+                        <div
+                          class="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center"
+                          style="background: #f0f2f8"
+                        >
+                          <span
+                            class="material-symbols-outlined text-2xl text-secondary"
+                            >translate</span
+                          >
+                        </div>
+                        <p class="text-sm font-semibold text-gray-500">
+                          Ready to translate
+                        </p>
+                        <p class="text-xs text-gray-400">
+                          Choose a direction and click Translate.<br />A Word
+                          doc will be created automatically.
+                        </p>
+                      </div>
+
+                      <!-- Loading state (hidden by default) -->
+                      <div
+                        id="translate-loading"
+                        class="hidden w-full space-y-4 text-center"
+                      >
+                        <div
+                          class="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center"
+                          style="background: #f0f2f8"
+                        >
+                          <span
+                            class="material-symbols-outlined text-2xl text-secondary"
+                            style="animation: spin 1.2s linear infinite"
+                            >refresh</span
+                          >
+                        </div>
+                        <div>
+                          <p
+                            id="translate-progress-label"
+                            class="text-sm font-semibold text-gray-600 mb-3"
+                          >
+                            Translating...
+                          </p>
+                          <div
+                            class="w-full h-2 bg-gray-100 rounded-full overflow-hidden"
+                          >
+                            <div
+                              id="translate-progress-bar"
+                              class="h-full rounded-full transition-all duration-500 collect-btn-gradient"
+                              style="width: 0%"
+                            ></div>
+                          </div>
+                          <p
+                            id="translate-progress-sub"
+                            class="text-[10px] text-gray-400 mt-1.5"
+                          >
+                            Section 0 of 0
+                          </p>
+                        </div>
+                      </div>
+
+                      <!-- Done state (hidden by default) -->
+                      <div
+                        id="translate-done"
+                        class="hidden text-center space-y-4 w-full"
+                      >
+                        <div
+                          class="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center bg-green-50"
+                        >
+                          <span
+                            class="material-symbols-outlined text-2xl text-green-500"
+                            style="font-variation-settings: &quot;FILL&quot; 1"
+                            >check_circle</span
+                          >
+                        </div>
+                        <div>
+                          <p class="text-sm font-semibold text-gray-700">
+                            Translation complete!
+                          </p>
+                          <p class="text-xs text-gray-400 mt-1">
+                            Your Word doc is ready to download.
+                          </p>
+                        </div>
+                        <button
+                          onclick="downloadTranslationDocx()"
+                          id="download-docx-btn"
+                          class="w-full py-3 rounded-xl collect-btn-gradient text-white text-sm font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2 shadow-md shadow-indigo-200"
+                        >
+                          <span class="material-symbols-outlined text-sm"
+                            >download</span
+                          >
+                          Download Word Doc
+                        </button>
+                        <button
+                          onclick="generateTranslation()"
+                          class="w-full py-2.5 rounded-xl border border-gray-200 text-gray-500 text-xs font-semibold hover:bg-gray-50 transition-all"
+                        >
+                          Translate Again
+                        </button>
+                      </div>
+
+                      <!-- Error state (hidden by default) -->
+                      <div
+                        id="translate-error"
+                        class="hidden text-center space-y-2 w-full"
+                      >
+                        <div
+                          class="p-4 rounded-xl bg-red-50 border border-red-100"
+                        >
+                          <p
+                            id="translate-error-msg"
+                            class="text-xs text-red-500 font-medium"
+                          ></p>
+                        </div>
+                        <button
+                          onclick="generateTranslation()"
+                          class="w-full py-2.5 rounded-xl border border-gray-200 text-gray-500 text-xs font-semibold hover:bg-gray-50 transition-all"
+                        >
+                          Try Again
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Fetch transcript -->
+                    <div class="p-4 border-t border-gray-100">
+                      <button
+                        onclick="fetchTranscriptManual()"
+                        id="fetch-transcript-btn"
+                        class="w-full py-2.5 rounded-xl border border-gray-200 text-primary text-xs font-bold hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+                      >
+                        <span class="material-symbols-outlined text-sm"
+                          >closed_caption</span
+                        >
+                        <span id="fetch-transcript-label"
+                          >Fetch Transcript</span
+                        >
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- ─────────────────────────────────────────
+         SCREEN 4: SETTINGS
+    ───────────────────────────────────────── -->
+        <div class="screen p-10 pt-10 space-y-12" id="screen-settings">
+          <section class="max-w-5xl mt-4">
+            <h2
+              class="font-headline text-4xl font-extrabold text-primary tracking-tight mb-2"
+            >
+              Settings
+            </h2>
+            <p class="text-on-surface-variant font-medium">
+              Configure your collection environment and storage preferences.
+            </p>
+          </section>
+
+          <!-- Storage destination -->
+          <section class="max-w-5xl">
+            <div
+              class="glass-panel rounded-xl p-8 flex flex-col justify-between border border-slate-200"
+            >
+              <div>
+                <div class="flex items-center gap-3 mb-5">
+                  <div class="p-2 bg-secondary/10 rounded-lg">
+                    <span class="material-symbols-outlined text-secondary"
+                      >folder_open</span
+                    >
+                  </div>
+                  <h3 class="font-headline text-xl font-bold text-primary">
+                    Storage Destination
+                  </h3>
+                </div>
+                <p class="text-slate-600 text-sm mb-7 leading-relaxed max-w-lg">
+                  Choose the primary directory for your collected archives. An
+                  SSD is recommended for faster indexing.
+                </p>
+              </div>
+              <div
+                class="flex items-center gap-4 bg-white/50 backdrop-blur-sm p-3 pl-5 rounded-xl border border-slate-200/60"
+              >
+                <span
+                  id="current-path"
+                  class="text-xs font-mono text-primary font-medium truncate flex-1"
+                >
+                  ~/Downloads (default)
+                </span>
+                <button
+                  onclick="chooseFolder()"
+                  class="ml-auto px-5 py-2 bg-secondary text-white text-xs font-bold rounded-lg hover:bg-sky-400 transition-all flex items-center gap-2 shadow-md shadow-sky-100"
+                >
+                  <span class="material-symbols-outlined text-sm">edit</span>
+                  Change
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Download format defaults -->
+          <section class="max-w-5xl space-y-5">
+            <h3
+              class="font-headline text-xl font-bold text-primary flex items-center gap-2"
+            >
+              <span class="material-symbols-outlined">tune</span> Default
+              Download Settings
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div
+                class="glass-panel rounded-xl p-6 border border-slate-200 space-y-4"
+              >
+                <p class="text-sm font-bold text-primary">Default Format</p>
+                <div class="flex gap-3">
+                  <button
+                    id="fmt-mp4"
+                    onclick="setDefaultFormat('mp4')"
+                    class="flex-1 py-2.5 rounded-lg text-xs font-bold bg-primary text-white transition-all"
+                  >
+                    MP4 Video
+                  </button>
+                  <button
+                    id="fmt-mp3"
+                    onclick="setDefaultFormat('mp3')"
+                    class="flex-1 py-2.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-500 transition-all hover:bg-slate-200"
+                  >
+                    MP3 Audio
+                  </button>
+                </div>
+              </div>
+              <div
+                class="glass-panel rounded-xl p-6 border border-slate-200 space-y-4"
+              >
+                <p class="text-sm font-bold text-primary">Default Quality</p>
+                <select
+                  id="default-quality"
+                  class="w-full bg-white border border-slate-200 rounded-lg py-2 px-3 text-sm text-primary font-medium focus:ring-2 focus:ring-primary/20 outline-none"
+                >
+                  <option value="2160p">4K UHD (2160p)</option>
+                  <option value="1080p" selected>Full HD (1080p)</option>
+                  <option value="720p">HD (720p)</option>
+                  <option value="480p">SD (480p)</option>
+                </select>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+      <!-- end content-area -->
+
+      <!-- FOOTER -->
+      <footer
+        class="px-8 py-5 flex justify-between items-center bg-white/30 backdrop-blur-sm border-t border-slate-100"
+      >
+        <div
+          class="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em]"
+        >
+          System v1.0.0 · jiyunchoi31@gmail.com
+        </div>
+      </footer>
+    </main>
+
+    <!-- ═══════════════════════════════════════════════
+     APP LOGIC
+═══════════════════════════════════════════════ -->
+    <script>
+      // ─── State ───────────────────────────────────────
+      // !! PASTE YOUR ANTHROPIC API KEY HERE !!
+      const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
+
+      let currentScreen = "dashboard";
+      let selectedQuality = "1080p";
+      let downloadPath = "";
+      let selectedVideoId = null;
+      let selectedVideoFilePath = null;
+      let videos = []; // populated from Firebase
+      let tags = []; // tags for selected video
+      let activeDownloads = {}; // { id: { title, percent, speed, format } }
+      let activeTagFilter = []; // empty = show all
+      let galleryFormatFilter = "all";
+
+      // ─── Navigation ─────────────────────────────────
+      function navigateTo(screen) {
+        document
+          .querySelectorAll(".screen")
+          .forEach((s) => s.classList.remove("active"));
+        document.getElementById("screen-" + screen).classList.add("active");
+
+        document.querySelectorAll(".nav-link").forEach((link) => {
+          const isActive = link.dataset.screen === screen;
+          link.classList.toggle("nav-item-active", isActive);
+          link.classList.toggle("text-slate-500", !isActive);
+          link.classList.toggle("hover:text-primary", !isActive);
+          link.classList.toggle("hover:bg-slate-50", !isActive);
+        });
+
+        const titles = {
+          dashboard: "Dashboard",
+          gallery: "Collection",
+          detail: "Video Detail",
+          settings: "Settings",
+        };
+        document.getElementById("page-title").textContent =
+          titles[screen] || screen;
+        document.getElementById("content-area").scrollTop = 0;
+        currentScreen = screen;
+        // Wait one frame so the screen element is painted before we render into it
+        requestAnimationFrame(() => {
+          if (screen === "gallery") {
+            renderTagFilterPills();
+            searchAndRender(
+              document.getElementById("organize-search")?.value || "",
+            );
+          }
+          if (screen === "dashboard") {
+            renderRecentVideos(videos);
+          }
+        });
+      }
+
+      document.querySelectorAll(".nav-link").forEach((link) => {
+        link.addEventListener("click", () => navigateTo(link.dataset.screen));
+      });
+
+      // ─── Collect Video ───────────────────────────────
+      async function collectVideo() {
+        const url = document.getElementById("url-input").value.trim();
+        if (!url) return;
+
+        const status = document.getElementById("collect-status");
+        const progress = document.getElementById("collect-progress");
+
+        // Show loading bar, hide status text
+        status.classList.add("hidden");
+        progress.classList.remove("hidden");
+
+        try {
+          const ytMatch = url.match(
+            /(?:v=|youtu\.be\/|shorts\/)([a-zA-Z0-9_-]{11})/,
+          );
+          const videoId = ytMatch ? ytMatch[1] : null;
+          const thumbnail = videoId
+            ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+            : "";
+          // Always store normalized URL so downloads work correctly
+          const normalizedUrl = normalizeYouTubeUrl(url);
+
+          // Fetch real title async using yt-dlp --get-title
+          const title = await fetchVideoTitle(url, videoId);
+
+          const { addDoc, collection, Timestamp } = window._fb;
+          const docRef = await addDoc(collection(db, "videos"), {
+            url: normalizedUrl,
+            title,
+            thumbnail,
+            tags: [],
+            transcript: "",
+            format: "mp4",
+            quality: "1080p",
+            downloadPath: "",
+            downloaded: false,
+            collectedAt: Timestamp.fromDate(new Date()),
+          });
+
+          // Immediately add to local array and re-render without waiting for snapshot
+          const newVideo = {
+            id: docRef.id,
+            url: normalizedUrl,
+            title,
+            thumbnail,
+            tags: [],
+            transcript: "",
+            format: "mp4",
+            quality: "1080p",
+            downloadPath: "",
+            downloaded: false,
+            collectedAt: { seconds: Date.now() / 1000 },
+          };
+          videos.unshift(newVideo);
+          renderRecentVideos(videos);
+          searchAndRender(
+            document.getElementById("organize-search")?.value || "",
+          );
+
+          // Hide loading bar, show success
+          progress.classList.add("hidden");
+          status.textContent = `✓ "${title}" collected!`;
+          status.classList.remove("hidden", "text-red-500");
+          status.classList.add("text-secondary");
+          document.getElementById("url-input").value = "";
+          setTimeout(() => status.classList.add("hidden"), 4000);
+        } catch (err) {
+          progress.classList.add("hidden");
+          status.textContent = "Error: " + err.message;
+          status.classList.remove("hidden", "text-secondary");
+          status.classList.add("text-red-500");
+          console.error(err);
+        }
+      }
+
+      // Fetch YouTube title via yt-dlp without blocking the UI
+      function fetchVideoTitle(url, videoId) {
+        return new Promise((resolve) => {
+          const fallback = videoId ? `YouTube Video (${videoId})` : url;
+          // Strip playlist params and normalize Shorts URLs
+          const cleanUrl = normalizeYouTubeUrl(url);
+          try {
+            const { spawn } = require("child_process");
+            const proc = spawn("/opt/homebrew/bin/yt-dlp", [
+              "--get-title",
+              "--no-playlist",
+              "--cookies-from-browser",
+              "chrome",
+              "--socket-timeout",
+              "10",
+              cleanUrl,
+            ]);
+            let output = "";
+            proc.stdout.on("data", (d) => {
+              output += d.toString();
+            });
+            proc.on("close", (code) => {
+              const title = output.trim();
+              resolve(code === 0 && title ? title : fallback);
+            });
+            proc.on("error", () => resolve(fallback));
+            // Timeout after 12 seconds — fall back gracefully
+            setTimeout(() => {
+              proc.kill();
+              resolve(fallback);
+            }, 12000);
+          } catch (e) {
+            resolve(fallback);
+          }
+        });
+      }
+
+      // ─── Render Videos ───────────────────────────────
+      function renderRecentVideos(allVideos) {
+        const container = document.getElementById("recent-videos");
+        if (!container) return;
+
+        if (!allVideos.length) {
+          container.innerHTML = `<div class="col-span-3 text-center py-12 text-slate-400 font-medium text-sm">No videos collected yet. Paste a YouTube URL above to get started.</div>`;
+          return;
+        }
+
+        // Show up to 6 most recent
+        const recent = allVideos.slice(0, 6);
+        container.innerHTML = recent
+          .map(
+            (v) => `
+    <div onclick="openDetail('${v.id}')" class="group relative rounded-2xl overflow-hidden bg-white border border-slate-100 shadow-sm hover:shadow-lg transition-all cursor-pointer hover:-translate-y-0.5">
+      <div class="aspect-video overflow-hidden bg-slate-100 relative">
+        ${
+          v.thumbnail
+            ? `<img src="${v.thumbnail}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" onerror="this.style.display='none'">`
+            : `<div class="w-full h-full flex items-center justify-center"><span class="material-symbols-outlined text-slate-300 text-5xl">movie</span></div>`
+        }
+        <!-- Download status badge -->
+        <div class="absolute top-2 left-2">
+          ${
+            v.downloaded
+              ? `<div class="w-6 h-6 rounded-full bg-secondary flex items-center justify-center shadow" title="Downloaded">
+                 <span class="material-symbols-outlined text-white" style="font-size:14px;font-variation-settings:'FILL' 1;">check</span>
+               </div>`
+              : `<div class="w-6 h-6 rounded-full bg-white/70 backdrop-blur-sm flex items-center justify-center shadow" title="Collected, not downloaded">
+                 <span class="material-symbols-outlined text-slate-400" style="font-size:14px;">check</span>
+               </div>`
+          }
+        </div>
+      </div>
+      <div class="p-4 space-y-2">
+        <h4 class="font-headline font-bold text-sm text-primary truncate">${v.title}</h4>
+        <div class="flex items-center gap-2 flex-wrap">
+          ${(v.tags || []).map((t) => `<span class="px-2 py-0.5 rounded-full bg-primary/5 text-[10px] text-primary font-bold">#${t}</span>`).join("")}
+          <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">${v.format || "mp4"} · ${v.quality || "1080p"}</span>
+        </div>
+      </div>
+    </div>
+  `,
+          )
+          .join("");
+      }
+
+      // ─── Open Video Detail ────────────────────────────
+      function openDetail(id) {
+        selectedVideoId = id;
+        selectedVideoFilePath = null;
+        const video = videos.find((v) => v.id === id);
+        if (!video) return;
+        document.getElementById("detail-title").textContent = video.title;
+        document.getElementById("detail-meta").textContent =
+          `Collected ${video.collectedAt?.toDate?.()?.toLocaleDateString?.() || "recently"}`;
+
+        // Reset player
+        const player = document.getElementById("video-player");
+        const thumb = document.getElementById("detail-thumb");
+        const overlay = document.getElementById("player-overlay");
+        player.style.display = "none";
+        player.src = "";
+        thumb.style.display = "block";
+        overlay.style.display = "flex";
+        if (video.thumbnail) thumb.src = video.thumbnail;
+
+        // If already downloaded with a local file path, store it
+        if (video.downloaded && video.localFile) {
+          selectedVideoFilePath = video.localFile;
+        }
+
+        tags = video.tags || [];
+        renderTags();
+        loadAiPanelForVideo(video);
+        navigateTo("detail");
+      }
+
+      // ─── Video Playback ───────────────────────────────
+      function playVideo() {
+        const player = document.getElementById("video-player");
+        const thumb = document.getElementById("detail-thumb");
+        const overlay = document.getElementById("player-overlay");
+        if (selectedVideoFilePath) {
+          player.src = `file://${selectedVideoFilePath}`;
+          player.style.display = "block";
+          thumb.style.display = "none";
+          overlay.style.display = "none";
+          player.play();
+        } else {
+          // Not downloaded yet — open in browser
+          const video = videos.find((v) => v.id === selectedVideoId);
+          if (video?.url) {
+            const { shell } = require("electron");
+            shell.openExternal(video.url);
+          }
+        }
+      }
+
+      // ─── Gallery filter ───────────────────────────────
+      function filterGallery(type, btn) {
+        galleryFormatFilter = type;
+        document.querySelectorAll(".filter-btn").forEach((b) => {
+          b.className =
+            "filter-btn px-5 py-1.5 rounded-md text-xs font-semibold text-slate-500 hover:text-primary transition-colors";
+        });
+        btn.className =
+          "filter-btn px-5 py-1.5 rounded-md text-xs font-bold bg-primary text-white shadow-sm";
+        searchAndRender(
+          document.getElementById("organize-search")?.value || "",
+        );
+      }
+
+      // ─── Tag filter ──────────────────────────────────
+      function filterByTag(tag) {
+        if (tag === "all") {
+          activeTagFilter = [];
+        } else {
+          if (activeTagFilter.includes(tag)) {
+            activeTagFilter = activeTagFilter.filter((t) => t !== tag);
+          } else {
+            activeTagFilter.push(tag);
+          }
+        }
+        renderTagFilterPills();
+        searchAndRender(
+          document.getElementById("organize-search")?.value || "",
+        );
+      }
+
+      function renderTagFilterPills() {
+        const container = document.getElementById("tag-filter-pills");
+        if (!container) return;
+        const allTags = ["all", ...allKnownTags];
+        const noneSelected = activeTagFilter.length === 0;
+        container.innerHTML = allTags
+          .map((tag) => {
+            const isActive =
+              tag === "all" ? noneSelected : activeTagFilter.includes(tag);
+            return `<button onclick="filterByTag('${tag}')"
+            class="otag px-3 py-1 rounded-full text-[10px] font-bold transition-all ${
+              isActive
+                ? "bg-white text-primary shadow-sm"
+                : "bg-white/10 text-white/70 hover:bg-white/20"
+            }">#${tag}</button>`;
+          })
+          .join("");
+      }
+
+      // ─── Download Queue ───────────────────────────────
+      function addToQueue(id, title, format) {
+        activeDownloads[id] = { title, percent: 0, speed: "—", format };
+        document.getElementById("sidebar-queue").classList.remove("hidden");
+        renderQueue();
+      }
+
+      function updateQueue(id, percent, speed) {
+        if (!activeDownloads[id]) return;
+        activeDownloads[id].percent = percent;
+        activeDownloads[id].speed = speed;
+        renderQueue();
+      }
+
+      function removeFromQueue(id, success) {
+        if (success) {
+          // Mark as complete so renderQueue shows green at 100%
+          if (activeDownloads[id]) {
+            activeDownloads[id].percent = 100;
+            activeDownloads[id].complete = true;
+          }
+          renderQueue();
+          // Remove after 1.2 seconds
+          setTimeout(() => {
+            delete activeDownloads[id];
+            if (!Object.keys(activeDownloads).length) {
+              document.getElementById("sidebar-queue").classList.add("hidden");
+            }
+            renderQueue();
+          }, 1200);
+        } else {
+          delete activeDownloads[id];
+          if (!Object.keys(activeDownloads).length) {
+            document.getElementById("sidebar-queue").classList.add("hidden");
+          }
+          renderQueue();
+        }
+      }
+
+      function renderQueue() {
+        const items = Object.entries(activeDownloads);
+        document.getElementById("queue-items").innerHTML = items
+          .map(
+            ([id, d]) => `
+          <div class="bg-white/60 rounded-lg p-3 space-y-1.5" data-vid="${id}">
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-[10px] font-bold text-primary truncate flex-1">${d.title}</p>
+              <span class="text-[10px] font-mono font-bold shrink-0 ${d.complete ? "text-green-500" : "text-secondary"}">${d.complete ? "✓" : Math.round(d.percent) + "%"}</span>
+            </div>
+            <div class="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
+              <div class="queue-bar h-full rounded-full transition-all duration-300 ${d.complete ? "bg-green-500" : "bg-secondary"}" style="width:${d.percent}%"></div>
+            </div>
+            <p class="text-[10px] ${d.complete ? "text-green-500 font-bold" : "text-slate-400"}">${d.complete ? "Complete!" : d.format.toUpperCase() + " · " + d.speed}</p>
+          </div>`,
+          )
+          .join("");
+      }
+
+      // ─── Tags ────────────────────────────────────────
+      const DEFAULT_TAGS = [
+        { key: "sermon", icon: "church" },
+        { key: "documentary", icon: "videocam" },
+        { key: "news", icon: "newspaper" },
+      ];
+
+      // Universal custom tags — persisted in Firestore under a shared "meta" doc
+      let allKnownTags = [...DEFAULT_TAGS.map((t) => t.key)];
+
+      async function saveUniversalTags() {
+        const custom = allKnownTags.filter(
+          (t) => !DEFAULT_TAGS.find((d) => d.key === t),
+        );
+        try {
+          const { setDoc, doc } = window._fb;
+          await setDoc(doc(db, "meta", "tags"), { custom });
+        } catch (e) {
+          console.warn("Could not save universal tags", e);
+        }
+      }
+
+      async function loadUniversalTags() {
+        try {
+          const { getDoc, doc } = window._fb;
+          const snap = await getDoc(doc(db, "meta", "tags"));
+          if (snap.exists() && snap.data().custom) {
+            snap.data().custom.forEach((t) => {
+              if (!allKnownTags.includes(t)) allKnownTags.push(t);
+            });
+          }
+        } catch (e) {
+          console.warn("Could not load universal tags", e);
+        }
+        renderTagFilterPills();
+      }
+
+      function renderTags() {
+        const container = document.getElementById("tag-list");
+        if (!container) return;
+        container.innerHTML = allKnownTags
+          .map((key) => {
+            const isActive = tags.includes(key);
+            const def = DEFAULT_TAGS.find((d) => d.key === key);
+            const icon = def ? def.icon : "sell";
+            const isCustom = !def;
+            return `<div onclick="toggleTag('${key}')" class="cursor-pointer flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-all ${
+              isActive
+                ? "border-primary bg-primary/5"
+                : "border-slate-200 bg-slate-50 hover:border-primary/40"
+            }">
+            <div class="flex items-center gap-3">
+              <span class="material-symbols-outlined text-lg ${isActive ? "text-primary" : "text-slate-400"}">${icon}</span>
+              <span class="font-bold text-sm ${isActive ? "text-primary" : "text-slate-600"}">#${key}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              ${
+                isActive
+                  ? `<span class="material-symbols-outlined text-primary text-lg" style="font-variation-settings:'FILL' 1;">check_circle</span>`
+                  : `<span class="w-5 h-5 rounded-full border-2 border-slate-300 inline-block"></span>`
+              }
+              ${isCustom ? `<button onclick="event.stopPropagation();removeCustomTag('${key}')" class="text-slate-300 hover:text-red-400 transition-colors ml-1"><span class="material-symbols-outlined text-sm">close</span></button>` : ""}
+            </div>
+          </div>`;
+          })
+          .join("");
+      }
+
+      async function toggleTag(tag) {
+        if (!selectedVideoId) return;
+        tags = tags.includes(tag)
+          ? tags.filter((t) => t !== tag)
+          : [...tags, tag];
+        renderTags();
+        try {
+          const { updateDoc, doc } = window._fb;
+          await updateDoc(doc(db, "videos", selectedVideoId), { tags });
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      function addCustomTag() {
+        const input = document.getElementById("custom-tag-input");
+        const raw = input.value
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9_-]/g, "");
+        if (!raw) {
+          input.value = "";
+          return;
+        }
+        // Add to universal list if not already there
+        if (!allKnownTags.includes(raw)) {
+          allKnownTags.push(raw);
+          saveUniversalTags();
+          renderTagFilterPills();
+        }
+        // Also apply to current video
+        if (!tags.includes(raw)) {
+          tags.push(raw);
+          if (selectedVideoId) {
+            const { updateDoc, doc } = window._fb;
+            updateDoc(doc(db, "videos", selectedVideoId), { tags }).catch(
+              console.error,
+            );
+          }
+        }
+        input.value = "";
+        renderTags();
+      }
+
+      function removeCustomTag(tag) {
+        // Remove from universal list
+        allKnownTags = allKnownTags.filter((t) => t !== tag);
+        saveUniversalTags();
+        renderTagFilterPills();
+        // Also remove from current video's active tags
+        tags = tags.filter((t) => t !== tag);
+        renderTags();
+        if (selectedVideoId) {
+          const { updateDoc, doc } = window._fb;
+          updateDoc(doc(db, "videos", selectedVideoId), { tags }).catch(
+            console.error,
+          );
+        }
+      }
+
+      // ─── Quality Picker ───────────────────────────────
+      function setQuality(btn, quality) {
+        selectedQuality = quality;
+        document.querySelectorAll(".quality-btn").forEach((b) => {
+          b.classList.remove("border-primary", "text-primary", "bg-primary/5");
+          b.classList.add("border-slate-200", "text-slate-500");
+        });
+        btn.classList.add("border-primary", "text-primary", "bg-primary/5");
+        btn.classList.remove("border-slate-200", "text-slate-500");
+      }
+
+      // ─── Download ─────────────────────────────────────
+      async function downloadAs(format, id) {
+        const vid = id || selectedVideoId;
+        if (!vid) {
+          showDownloadStatus("Please select a video first.");
+          return;
+        }
+        const video = videos.find((v) => v.id === vid);
+        if (!video) return;
+
+        // Strip playlist/index params so only the single video downloads
+        // Normalize URL — handles Shorts, playlists, etc.
+        const cleanUrl = normalizeYouTubeUrl(video.url);
+        const isShort = isShorts(video.url);
+
+        const os = require("os");
+        const path = require("path");
+        const { spawn } = require("child_process");
+
+        const destPath = downloadPath || path.join(os.homedir(), "Downloads");
+        const ytdlpBin = "/opt/homebrew/bin/yt-dlp";
+        const outputTemplate = path.join(destPath, "%(title)s.%(ext)s");
+        const ffmpegBin = "/opt/homebrew/bin/ffmpeg";
+
+        // Shorts are vertical and often only have one combined stream — use best available
+        const videoFormat = isShort
+          ? `best[ext=mp4]/best`
+          : `bestvideo[ext=mp4][height<=${parseInt(selectedQuality)}]+bestaudio[ext=m4a]/best[ext=mp4]/best`;
+
+        const args =
+          format === "mp3"
+            ? [
+                cleanUrl,
+                "--no-playlist",
+                "--cookies-from-browser",
+                "chrome",
+                "-x",
+                "--audio-format",
+                "mp3",
+                "--audio-quality",
+                "0",
+                "--ffmpeg-location",
+                ffmpegBin,
+                "-o",
+                outputTemplate,
+              ]
+            : [
+                cleanUrl,
+                "--no-playlist",
+                "--cookies-from-browser",
+                "chrome",
+                "-f",
+                videoFormat,
+                "--merge-output-format",
+                "mp4",
+                "--ffmpeg-location",
+                ffmpegBin,
+                "--postprocessor-args",
+                "ffmpeg:-c:v libx264 -c:a aac -movflags +faststart",
+                "-o",
+                outputTemplate,
+              ];
+
+        showDownloadStatus(
+          `Starting ${format.toUpperCase()} download at ${selectedQuality}...`,
+        );
+
+        addToQueue(vid, video.title, format);
+        const proc = spawn(ytdlpBin, args);
+        let lastPercent = "";
+        let localFilePath = "";
+
+        proc.stdout.on("data", (data) => {
+          const line = data.toString();
+          console.log("yt-dlp:", line.trim());
+          // Capture final output filename from various yt-dlp output patterns
+          const destMatch = line.match(/\[download\] Destination: (.+)/);
+          if (destMatch) localFilePath = destMatch[1].trim();
+          const mergeMatch = line.match(
+            /\[Merger\] Merging formats into "(.+?)"/,
+          );
+          if (mergeMatch) localFilePath = mergeMatch[1].trim();
+          const ffmpegMatch = line.match(/\[ffmpeg\] Destination: (.+)/);
+          if (ffmpegMatch) localFilePath = ffmpegMatch[1].trim();
+          const alreadyMatch = line.match(
+            /\[download\] (.+?) has already been downloaded/,
+          );
+          if (alreadyMatch) localFilePath = alreadyMatch[1].trim();
+          // Parse progress lines like "[download]  45.3% of 120.00MiB at 2.50MiB/s"
+          const match = line.match(/(\d+\.\d)%.*?at\s+([\d.]+\w+\/s)/);
+          if (match && match[1] !== lastPercent) {
+            lastPercent = match[1];
+            updateQueue(vid, parseFloat(match[1]), match[2]);
+            showDownloadStatus(`Downloading... ${match[1]}% at ${match[2]}`);
+          }
+        });
+
+        proc.stderr.on("data", (data) => {
+          console.error("yt-dlp stderr:", data.toString());
+        });
+
+        proc.on("close", async (code) => {
+          removeFromQueue(vid, code === 0);
+          if (code === 0) {
+            // If localFilePath is still empty, construct it from the title
+            if (!localFilePath) {
+              const ext = format === "mp3" ? "mp3" : "mp4";
+              localFilePath = require("path").join(
+                destPath,
+                `${video.title}.${ext}`,
+              );
+            }
+            showDownloadStatus(`✓ Saved to ${destPath}`);
+            selectedVideoFilePath = localFilePath;
+            // Immediately update local state so checkmark shows without waiting for Firestore
+            const localVid = videos.find((v) => v.id === vid);
+            if (localVid) {
+              localVid.downloaded = true;
+              localVid.format = format;
+              localVid.quality = selectedQuality;
+              localVid.localFile = localFilePath;
+            }
+            // Re-render whichever screen is active
+            requestAnimationFrame(() => {
+              try {
+                renderRecentVideos(videos);
+              } catch (e) {}
+              try {
+                searchAndRender(
+                  document.getElementById("organize-search")?.value || "",
+                );
+              } catch (e) {}
+            });
+            try {
+              const { updateDoc, doc } = window._fb;
+              await updateDoc(doc(db, "videos", vid), {
+                downloaded: true,
+                format,
+                quality: selectedQuality,
+                downloadPath: destPath,
+                localFile: localFilePath,
+              });
+            } catch (e) {
+              console.error(e);
+            }
+          } else {
+            showDownloadStatus(
+              `Download failed (exit code ${code}). Check the console for details.`,
+            );
+          }
+        });
+
+        proc.on("error", (err) => {
+          removeFromQueue(vid, false);
+          showDownloadStatus("Could not start yt-dlp: " + err.message);
+          console.error(err);
+        });
+      }
+
+      function showDownloadStatus(msg) {
+        const el = document.getElementById("download-status");
+        document.getElementById("download-status-msg").textContent = msg;
+        el.classList.remove("hidden");
+      }
+
+      // ─── Folder picker (Electron IPC) ─────────────────
+      async function chooseFolder() {
+        try {
+          const { ipcRenderer } = require("electron");
+          const folder = await ipcRenderer.invoke("choose-folder");
+          if (folder) {
+            downloadPath = folder;
+            document.getElementById("current-path").textContent = folder;
+          }
+        } catch (e) {
+          console.error("IPC error:", e);
+        }
+      }
+
+      // ─── Format default toggle ────────────────────────
+      function setDefaultFormat(fmt) {
+        document.getElementById("fmt-mp4").className =
+          fmt === "mp4"
+            ? "flex-1 py-2.5 rounded-lg text-xs font-bold bg-primary text-white transition-all"
+            : "flex-1 py-2.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-500 transition-all hover:bg-slate-200";
+        document.getElementById("fmt-mp3").className =
+          fmt === "mp3"
+            ? "flex-1 py-2.5 rounded-lg text-xs font-bold bg-primary text-white transition-all"
+            : "flex-1 py-2.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-500 transition-all hover:bg-slate-200";
+      }
+
+      // ─── Firebase live sync ───────────────────────────
+      let db; // shared Firestore instance
+
+      async function initFirebase() {
+        try {
+          const { initializeApp, getApps } = require("firebase/app");
+          const {
+            getFirestore,
+            collection,
+            onSnapshot,
+            addDoc,
+            updateDoc,
+            doc,
+            setDoc,
+            getDoc,
+            Timestamp,
+          } = require("firebase/firestore");
+
+const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY || "",
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN || "",
+  projectId: process.env.FIREBASE_PROJECT_ID || "",
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "",
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: process.env.FIREBASE_APP_ID || "",
+};
+
+          const app =
+            getApps().length === 0
+              ? initializeApp(firebaseConfig)
+              : getApps()[0];
+          db = getFirestore(app);
+
+          // Expose helpers globally so other functions can use them
+          window._fb = {
+            collection,
+            onSnapshot,
+            addDoc,
+            updateDoc,
+            doc,
+            setDoc,
+            getDoc,
+            Timestamp,
+          };
+
+          onSnapshot(
+            collection(db, "videos"),
+            { includeMetadataChanges: true },
+            (snapshot) => {
+              const committed = snapshot.docs.filter(
+                (d) => !d.metadata.hasPendingWrites,
+              );
+              const source = committed.length > 0 ? committed : snapshot.docs;
+              videos = source.map((d) => ({ id: d.id, ...d.data() }));
+              // Sort newest first
+              videos.sort(
+                (a, b) =>
+                  (b.collectedAt?.seconds || 0) - (a.collectedAt?.seconds || 0),
+              );
+              // Use requestAnimationFrame so DOM is guaranteed ready before rendering
+              // Wrap each independently so an error in one never blocks the other
+              requestAnimationFrame(() => {
+                try {
+                  renderRecentVideos(videos);
+                } catch (e) {
+                  console.warn("renderRecentVideos error:", e);
+                }
+                try {
+                  searchAndRender(
+                    document.getElementById("organize-search")?.value || "",
+                  );
+                } catch (e) {
+                  console.warn("searchAndRender error:", e);
+                }
+              });
+              console.log("Firebase synced:", videos.length, "videos");
+            },
+          );
+        } catch (e) {
+          console.error("Firebase init error:", e);
+        }
+      }
+
+      // ─── searchAndRender — unified gallery + search ───
+      function searchAndRender(query) {
+        const grid = document.getElementById("gallery-grid");
+        if (!grid) return;
+        // gallery-empty may have been replaced by innerHTML - that's fine
+        const empty = document.getElementById("gallery-empty");
+
+        const sortEl = document.getElementById("gallery-sort");
+        const sort = sortEl ? sortEl.value : "newest";
+        let filtered = [...videos];
+
+        // Format filter
+        if (galleryFormatFilter && galleryFormatFilter !== "all") {
+          filtered = filtered.filter(
+            (v) => (v.format || "mp4") === galleryFormatFilter,
+          );
+        }
+        // Tag filter — OR logic across selected tags
+        if (activeTagFilter.length > 0) {
+          filtered = filtered.filter((v) =>
+            activeTagFilter.some((tag) => (v.tags || []).includes(tag)),
+          );
+        }
+        // Keyword search
+        if (query.trim()) {
+          const q = query.toLowerCase();
+          filtered = filtered.filter(
+            (v) =>
+              v.title?.toLowerCase().includes(q) ||
+              v.transcript?.toLowerCase().includes(q) ||
+              (v.tags || []).some((t) => t.toLowerCase().includes(q)),
+          );
+        }
+        // Sort
+        filtered.sort((a, b) => {
+          const ta = a.collectedAt?.seconds || 0;
+          const tb = b.collectedAt?.seconds || 0;
+          return sort === "oldest" ? ta - tb : tb - ta;
+        });
+
+        if (!filtered.length) {
+          if (empty) empty.style.display = "block";
+          else
+            grid.innerHTML = `<div class="col-span-4 text-center py-20 text-slate-400 font-medium text-sm">No videos match your filter.</div>`;
+          return;
+        }
+        if (empty) empty.style.display = "none";
+
+        const q = query.toLowerCase();
+        if (query.trim()) {
+          // Search mode — show list rows with snippet
+          grid.className = "space-y-4";
+          grid.innerHTML = filtered
+            .map((v) => {
+              let snippetHtml = "";
+              if (v.transcript) {
+                const idx = v.transcript.toLowerCase().indexOf(q);
+                if (idx !== -1) {
+                  const start = Math.max(0, idx - 60);
+                  const end = Math.min(
+                    v.transcript.length,
+                    idx + q.length + 60,
+                  );
+                  const snippet = v.transcript
+                    .slice(start, end)
+                    .replace(
+                      new RegExp(query, "gi"),
+                      (m) =>
+                        `<mark style="background:rgba(56,189,248,0.25);border-radius:2px">${m}</mark>`,
+                    );
+                  snippetHtml = `<p class="text-xs text-slate-600 leading-relaxed pt-1">...${snippet}...</p>`;
+                }
+              }
+              return `<div onclick="openDetail('${v.id}')" class="glass-panel rounded-xl p-5 border border-slate-200 hover:border-secondary/40 transition-all cursor-pointer flex gap-5 items-start group">
+              <div class="relative w-28 h-16 rounded-lg overflow-hidden bg-slate-100 shrink-0">
+                ${v.thumbnail ? `<img src="${v.thumbnail}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center"><span class="material-symbols-outlined text-slate-300">movie</span></div>`}
+                <div class="absolute top-1 left-1">
+                  ${
+                    v.downloaded
+                      ? `<div class="w-5 h-5 rounded-full bg-secondary flex items-center justify-center shadow"><span class="material-symbols-outlined text-white" style="font-size:12px;font-variation-settings:'FILL' 1;">check</span></div>`
+                      : `<div class="w-5 h-5 rounded-full bg-white/70 flex items-center justify-center shadow"><span class="material-symbols-outlined text-slate-400" style="font-size:12px;">check</span></div>`
+                  }
+                </div>
+              </div>
+              <div class="flex-1 min-w-0 space-y-1">
+                <h4 class="font-headline font-bold text-primary text-sm truncate group-hover:text-secondary transition-colors">${v.title}</h4>
+                <div class="flex gap-2 flex-wrap">
+                  ${(v.tags || []).map((t) => `<span class="px-2 py-0.5 rounded-full bg-primary/5 text-[10px] text-primary font-bold">#${t}</span>`).join("")}
+                  <span class="text-[10px] text-slate-400 font-semibold uppercase">${v.format || "mp4"} · ${v.quality || "1080p"}</span>
+                </div>
+                ${snippetHtml}
+              </div>
+              <span class="material-symbols-outlined text-slate-300 group-hover:text-secondary transition-colors shrink-0">chevron_right</span>
+            </div>`;
+            })
+            .join("");
+        } else {
+          // Gallery grid mode
+          grid.className =
+            "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6";
+          grid.innerHTML = filtered
+            .map(
+              (v) => `
+            <div onclick="openDetail('${v.id}')" class="group relative overflow-hidden rounded-xl border border-slate-100 aspect-video shadow-sm bg-white cursor-pointer hover:shadow-md transition-all">
+              <div class="w-full h-full bg-slate-100">
+                ${v.thumbnail ? `<img src="${v.thumbnail}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">` : `<div class="w-full h-full flex items-center justify-center"><span class="material-symbols-outlined text-slate-300 text-4xl">movie</span></div>`}
+              </div>
+              <div class="absolute inset-0 bg-primary/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div class="absolute bottom-4 left-4 right-4 translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                <p class="font-bold text-sm text-white truncate">${v.title}</p>
+                <p class="text-[10px] font-bold text-sky-200 uppercase tracking-tight">${v.format || "mp4"} · ${v.quality || "1080p"}</p>
+              </div>
+              <!-- Checkmark badge — always visible -->
+              <div class="absolute top-2 left-2">
+                ${
+                  v.downloaded
+                    ? `<div class="w-7 h-7 rounded-full bg-secondary flex items-center justify-center shadow-md" title="Downloaded"><span class="material-symbols-outlined text-white text-sm" style="font-variation-settings:'FILL' 1;">check</span></div>`
+                    : `<div class="w-7 h-7 rounded-full bg-white/60 backdrop-blur-sm flex items-center justify-center shadow-sm" title="Collected, not downloaded"><span class="material-symbols-outlined text-slate-400 text-sm">check</span></div>`
+                }
+              </div>
+              <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onclick="event.stopPropagation();downloadAs('${v.format || "mp4"}','${v.id}')" class="w-8 h-8 rounded-lg bg-secondary text-white flex items-center justify-center hover:bg-sky-400 shadow-lg">
+                  <span class="material-symbols-outlined text-sm">download</span>
+                </button>
+              </div>
+            </div>`,
+            )
+            .join("");
+        }
+      }
+
+      // ─── URL normalizer — handles regular, Shorts, and playlist URLs ───
+      function normalizeYouTubeUrl(url) {
+        // Convert Shorts URL to standard watch URL
+        // https://www.youtube.com/shorts/VIDEO_ID → https://www.youtube.com/watch?v=VIDEO_ID
+        const shortsMatch = url.match(
+          /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+        );
+        if (shortsMatch)
+          return `https://www.youtube.com/watch?v=${shortsMatch[1]}`;
+        // Strip playlist/index params
+        return url
+          .replace(/&list=[^&]*/g, "")
+          .replace(/&index=[^&]*/g, "")
+          .replace(/\?list=[^&]*/g, "");
+      }
+
+      function isShorts(url) {
+        return url.includes("/shorts/");
+      }
+      function switchAiTab(tab) {
+        ["tags", "summary", "translate"].forEach((t) => {
+          document
+            .getElementById("ai-panel-" + t)
+            .classList.toggle("hidden", t !== tab);
+          const btn = document.getElementById("ai-tab-" + t);
+          if (t === tab) {
+            btn.classList.add("bg-white", "text-primary");
+            btn.classList.remove("text-white/70");
+          } else {
+            btn.classList.remove("bg-white", "text-primary");
+            btn.classList.add("text-white/70");
+          }
+        });
+      }
+
+      // ─── Transcript Fetcher ───────────────────────────
+      function fetchTranscript(vid, url) {
+        const { spawn } = require("child_process");
+        const os = require("os");
+        const path = require("path");
+        const fs = require("fs");
+        const tmpDir = os.tmpdir();
+        const videoId = url.match(/[?&]v=([^&]+)/)?.[1] || vid;
+        const outPath = path.join(tmpDir, videoId + ".%(ext)s");
+
+        // Try auto-generated subtitles first, then manual, multiple lang codes
+        const args = [
+          url,
+          "--no-playlist",
+          "--skip-download",
+          "--write-auto-sub",
+          "--write-sub",
+          "--sub-langs",
+          "en,en-US,en-GB,en-AU,ko,ko-KR",
+          "--sub-format",
+          "vtt/best",
+          "--cookies-from-browser",
+          "chrome",
+          "--sleep-interval",
+          "2",
+          "--ffmpeg-location",
+          "/opt/homebrew/bin/ffmpeg",
+          "-o",
+          outPath,
+        ];
+
+        console.log(
+          "fetchTranscript running:",
+          "/opt/homebrew/bin/yt-dlp",
+          args.join(" "),
+        );
+
+        const proc = spawn("/opt/homebrew/bin/yt-dlp", args);
+        let subtitleFile = "";
+        let stdoutAll = "";
+        let stderrAll = "";
+
+        proc.stdout.on("data", (data) => {
+          const text = data.toString();
+          stdoutAll += text;
+          console.log("yt-dlp stdout:", text.trim());
+          // Capture subtitle file paths — prefer English, fall back to Korean
+          const m1 = text.match(/\[info\] Writing video subtitles to: (.+)/);
+          if (m1) {
+            const f = m1[1].trim();
+            // Only overwrite if we don't have an English file yet
+            if (!subtitleFile || f.includes(".en.") || f.includes(".en-"))
+              subtitleFile = f;
+          }
+          const m2 = text.match(/\[download\] Destination: (.+\.vtt)/);
+          if (m2) {
+            const f = m2[1].trim();
+            if (!subtitleFile || f.includes(".en.") || f.includes(".en-"))
+              subtitleFile = f;
+          }
+          const m3 = text.match(
+            /\[download\] (.+\.vtt) has already been downloaded/,
+          );
+          if (m3) {
+            const f = m3[1].trim();
+            if (!subtitleFile || f.includes(".en.") || f.includes(".en-"))
+              subtitleFile = f;
+          }
+        });
+
+        proc.stderr.on("data", (data) => {
+          stderrAll += data.toString();
+          console.warn("yt-dlp stderr:", data.toString().trim());
+        });
+
+        proc.on("close", async (code) => {
+          console.log("yt-dlp exit code:", code);
+          console.log("subtitleFile captured:", subtitleFile);
+
+          // If path not captured from stdout, scan tmp dir for vtt files for this video
+          if (!subtitleFile) {
+            try {
+              const allVtts = fs
+                .readdirSync(tmpDir)
+                .filter((f) => f.startsWith(videoId) && f.endsWith(".vtt"))
+                .map((f) => path.join(tmpDir, f));
+              // Prefer English subtitles
+              const enVtt = allVtts.find(
+                (f) => f.includes(".en.") || f.includes(".en-"),
+              );
+              subtitleFile = enVtt || allVtts[0] || "";
+              if (subtitleFile) console.log("Found vtt by scan:", subtitleFile);
+            } catch (e) {
+              console.warn("tmpDir scan failed:", e);
+            }
+          }
+
+          if (!subtitleFile || !fs.existsSync(subtitleFile)) {
+            console.warn("No subtitle file found. stdout was:", stdoutAll);
+            const lbl = document.getElementById("fetch-transcript-label");
+            if (lbl) lbl.textContent = "No captions available";
+            return;
+          }
+
+          try {
+            const raw = fs.readFileSync(subtitleFile, "utf8");
+            console.log("VTT file size:", raw.length, "chars");
+
+            const transcript = raw
+              .split("\n")
+              .filter(
+                (l) =>
+                  l.trim() &&
+                  !l.startsWith("WEBVTT") &&
+                  !l.startsWith("Kind:") &&
+                  !l.startsWith("Language:") &&
+                  !l.match(/^\d{2}:\d{2}/) &&
+                  !l.match(/^-->/) &&
+                  !l.match(/^align:/) &&
+                  !l.match(/^position:/) &&
+                  !l.match(/^\s*$/),
+              )
+              .map((l) =>
+                l
+                  .replace(/<[^>]+>/g, "")
+                  .replace(/&amp;/g, "&")
+                  .replace(/&lt;/g, "<")
+                  .replace(/&gt;/g, ">")
+                  .trim(),
+              )
+              .filter(Boolean)
+              .filter((l, i, arr) => l !== arr[i - 1])
+              .join(" ")
+              .trim();
+
+            console.log("Transcript length:", transcript.length, "chars");
+            console.log("Transcript preview:", transcript.slice(0, 150));
+
+            if (transcript) {
+              const { updateDoc, doc } = window._fb;
+              await updateDoc(doc(db, "videos", vid), { transcript });
+              const localVid = videos.find((v) => v.id === vid);
+              if (localVid) localVid.transcript = transcript;
+              const lbl = document.getElementById("fetch-transcript-label");
+              if (lbl) lbl.textContent = "✓ Transcript Ready";
+            } else {
+              const lbl = document.getElementById("fetch-transcript-label");
+              if (lbl) lbl.textContent = "Transcript empty — try another video";
+            }
+            // Clean up
+            try {
+              fs.unlinkSync(subtitleFile);
+            } catch (e) {}
+          } catch (e) {
+            console.error("Transcript parse error:", e);
+            const lbl = document.getElementById("fetch-transcript-label");
+            if (lbl) lbl.textContent = "Parse error — check console";
+          }
+        });
+
+        proc.on("error", (err) => {
+          console.error("yt-dlp spawn error:", err);
+          const lbl = document.getElementById("fetch-transcript-label");
+          if (lbl) lbl.textContent = "yt-dlp error: " + err.message;
+        });
+      }
+
+      function fetchTranscriptManual() {
+        if (!selectedVideoId) return;
+        const video = videos.find((v) => v.id === selectedVideoId);
+        if (!video) return;
+        const lbl = document.getElementById("fetch-transcript-label");
+        const btn = document.getElementById("fetch-transcript-btn");
+        if (lbl) lbl.textContent = "Fetching...";
+        if (btn) btn.disabled = true;
+        const cleanUrl = normalizeYouTubeUrl(video.url);
+        fetchTranscript(selectedVideoId, cleanUrl);
+        setTimeout(() => {
+          if (btn) btn.disabled = false;
+          const v = videos.find((v) => v.id === selectedVideoId);
+          if (lbl)
+            lbl.textContent = v?.transcript
+              ? "✓ Transcript Ready"
+              : "Fetch Transcript";
+        }, 20000);
+      }
+
+      // ─── AI Summary ───────────────────────────────────
+      // ─── Summary language toggle ──────────────────────
+      let summaryLang = "en";
+      function setSummaryLang(lang) {
+        summaryLang = lang;
+        document.getElementById("summary-lang-en").className =
+          lang === "en"
+            ? "summary-lang-btn px-3 py-1 rounded-md text-xs font-bold bg-white text-primary shadow-sm transition-all"
+            : "summary-lang-btn px-3 py-1 rounded-md text-xs font-semibold text-gray-500 transition-all";
+        document.getElementById("summary-lang-ko").className =
+          lang === "ko"
+            ? "summary-lang-btn px-3 py-1 rounded-md text-xs font-bold bg-white text-primary shadow-sm transition-all"
+            : "summary-lang-btn px-3 py-1 rounded-md text-xs font-semibold text-gray-500 transition-all";
+        // Re-show existing summary in new language if available
+        const video = videos.find((v) => v.id === selectedVideoId);
+        const key = lang === "ko" ? "summaryKo" : "summary";
+        if (video?.[key]) showSummaryContent(video[key]);
+      }
+
+      function showSummaryContent(text) {
+        const content = document.getElementById("summary-content");
+        if (!content) return;
+        content.innerHTML = `
+          <div class="space-y-3">
+            <div class="flex items-center gap-2">
+              <span class="material-symbols-outlined text-secondary text-sm">auto_awesome</span>
+              <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">AI Summary</span>
+            </div>
+            <p class="text-sm text-gray-700 leading-relaxed">${text}</p>
+          </div>`;
+        const btn = document.getElementById("summary-btn");
+        if (btn)
+          btn.innerHTML = `<span class="material-symbols-outlined text-sm">refresh</span> Regenerate`;
+      }
+
+      async function generateSummary() {
+        if (!selectedVideoId) return;
+        const video = videos.find((v) => v.id === selectedVideoId);
+        if (!video) return;
+        const btn = document.getElementById("summary-btn");
+        const content = document.getElementById("summary-content");
+        if (!video.transcript) {
+          content.innerHTML = `<div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs font-medium">No transcript yet. Go to Translate tab and click Fetch Transcript first.</div>`;
+          return;
+        }
+        btn.innerHTML = `<span class="material-symbols-outlined text-sm" style="animation:spin 1s linear infinite">refresh</span> Generating...`;
+        btn.disabled = true;
+        content.innerHTML = `<p class="text-xs text-gray-400 text-center pt-8">Asking Claude...</p>`;
+
+        // Detect if transcript is Korean
+        const isKorean = /[\uAC00-\uD7AF]/.test(video.transcript.slice(0, 200));
+        const targetLang = summaryLang === "ko" ? "Korean" : "English";
+
+        try {
+          const response = await fetch(
+            "https://api.anthropic.com/v1/messages",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-api-key": ANTHROPIC_API_KEY,
+                "anthropic-version": "2023-06-01",
+                "anthropic-dangerous-direct-browser-access": "true",
+              },
+              body: JSON.stringify({
+                model: "claude-sonnet-4-20250514",
+                max_tokens: 1000,
+                messages: [
+                  {
+                    role: "user",
+                    content: `Summarize this video transcript in 3-4 sentences in ${targetLang}. Focus on the main topic and key points only.\n\nTranscript:\n${video.transcript.slice(0, 8000)}`,
+                  },
+                ],
+              }),
+            },
+          );
+          const data = await response.json();
+          if (data.error) throw new Error(data.error.message);
+          const summary =
+            data.content?.[0]?.text || "Could not generate summary.";
+          const key = summaryLang === "ko" ? "summaryKo" : "summary";
+          const { updateDoc, doc } = window._fb;
+          await updateDoc(doc(db, "videos", selectedVideoId), {
+            [key]: summary,
+          });
+          const localVid = videos.find((v) => v.id === selectedVideoId);
+          if (localVid) localVid[key] = summary;
+          showSummaryContent(summary);
+          btn.disabled = false;
+        } catch (e) {
+          content.innerHTML = `<div class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs font-medium">${e.message}</div>`;
+          btn.innerHTML = `<span class="material-symbols-outlined text-sm">auto_awesome</span> Try Again`;
+          btn.disabled = false;
+        }
+      }
+
+      // ─── Translation view toggle ──────────────────────
+      let _originalText = "";
+      let _translatedText = "";
+      let _originalLabel = "";
+      let _translatedLabel = "";
+
+      async function generateTranslation() {
+        if (!selectedVideoId) return;
+        const video = videos.find((v) => v.id === selectedVideoId);
+        if (!video) return;
+        const btn = document.getElementById("translate-btn");
+        const direction = document.getElementById("translate-direction").value;
+        const isEnKo = direction === "en-ko";
+
+        if (!video.transcript) {
+          setTranslateState(
+            "error",
+            "No transcript found. Click Fetch Transcript below first.",
+          );
+          return;
+        }
+
+        const transcriptIsKorean = /[\uAC00-\uD7AF]/.test(
+          video.transcript.slice(0, 200),
+        );
+        const sourceLang = isEnKo ? "English" : "Korean";
+        const targetLang = isEnKo ? "Korean" : "English";
+        const origLabel = transcriptIsKorean
+          ? "Korean (Original)"
+          : "English (Original)";
+        const transLabel = isEnKo
+          ? "Korean (Translation)"
+          : "English (Translation)";
+
+        btn.disabled = true;
+        setTranslateState("loading");
+
+        const CHUNK_SIZE = 4000;
+        const fullTranscript = video.transcript;
+        const chunks = [];
+        for (let i = 0; i < fullTranscript.length; i += CHUNK_SIZE) {
+          chunks.push(fullTranscript.slice(i, i + CHUNK_SIZE));
+        }
+
+        try {
+          const translatedChunks = [];
+          for (let i = 0; i < chunks.length; i++) {
+            // Update progress bar
+            const pct = Math.round((i / chunks.length) * 100);
+            const bar = document.getElementById("translate-progress-bar");
+            const lbl = document.getElementById("translate-progress-label");
+            const sub = document.getElementById("translate-progress-sub");
+            if (bar) bar.style.width = pct + "%";
+            if (lbl)
+              lbl.textContent = `Translating ${sourceLang} → ${targetLang}...`;
+            if (sub) sub.textContent = `Section ${i + 1} of ${chunks.length}`;
+
+            const response = await fetch(
+              "https://api.anthropic.com/v1/messages",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "x-api-key": ANTHROPIC_API_KEY,
+                  "anthropic-version": "2023-06-01",
+                  "anthropic-dangerous-direct-browser-access": "true",
+                },
+                body: JSON.stringify({
+                  model: "claude-sonnet-4-20250514",
+                  max_tokens: 8000,
+                  messages: [
+                    {
+                      role: "user",
+                      content: `Translate this ${sourceLang} transcript excerpt to ${targetLang}. Return ONLY the translated text, no commentary.\n\nText:\n${chunks[i]}`,
+                    },
+                  ],
+                }),
+              },
+            );
+            const data = await response.json();
+            if (data.error) throw new Error(data.error.message);
+            translatedChunks.push(data.content?.[0]?.text || "");
+          }
+
+          // Complete progress bar
+          const bar = document.getElementById("translate-progress-bar");
+          const sub = document.getElementById("translate-progress-sub");
+          if (bar) bar.style.width = "100%";
+          if (sub) sub.textContent = `All ${chunks.length} sections complete`;
+
+          const translated = translatedChunks.join("\n\n");
+
+          // Save to Firebase
+          const key = isEnKo ? "transcriptKo" : "transcriptEn";
+          const { updateDoc, doc } = window._fb;
+          await updateDoc(doc(db, "videos", selectedVideoId), {
+            [key]: translated,
+          });
+          const localVid = videos.find((v) => v.id === selectedVideoId);
+          if (localVid) localVid[key] = translated;
+
+          // Store for download
+          _originalText = fullTranscript;
+          _translatedText = translated;
+          _originalLabel = origLabel;
+          _translatedLabel = transLabel;
+          window._translationData = {
+            leftText: _originalText,
+            rightText: _translatedText,
+            leftLabel: origLabel,
+            rightLabel: transLabel,
+            title: video.title,
+          };
+
+          // Short pause so user sees 100%, then show done state
+          await new Promise((r) => setTimeout(r, 600));
+          setTranslateState("done");
+          btn.disabled = false;
+        } catch (e) {
+          setTranslateState("error", e.message);
+          btn.disabled = false;
+        }
+      }
+
+      function setTranslateState(state, errorMsg) {
+        const states = ["idle", "loading", "done", "error"];
+        states.forEach((s) => {
+          const el = document.getElementById("translate-" + s);
+          if (el) el.classList.toggle("hidden", s !== state);
+        });
+        if (state === "error" && errorMsg) {
+          const el = document.getElementById("translate-error-msg");
+          if (el) el.textContent = errorMsg;
+        }
+        if (state === "loading") {
+          const bar = document.getElementById("translate-progress-bar");
+          if (bar) bar.style.width = "0%";
+        }
+      }
+
+      // ─── Download Translation as Word Doc ─────────────
+      async function downloadTranslationDocx() {
+        const d = window._translationData;
+        if (!d) return;
+        const btn = document.getElementById("download-docx-btn");
+        btn.innerHTML = `<span class="material-symbols-outlined text-sm" style="animation:spin 1s linear infinite">refresh</span>`;
+        btn.disabled = true;
+        try {
+          const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+<style>
+  body{font-family:Arial,sans-serif;margin:40px;color:#1a1f36;}
+  h1{font-size:18px;margin-bottom:4px;}
+  .meta{font-size:11px;color:#9ca3af;margin-bottom:24px;}
+  .section{margin-bottom:32px;}
+  .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#6366f1;margin-bottom:8px;}
+  p{font-size:13px;line-height:1.8;color:#374151;}
+</style></head><body>
+<h1>${d.title}</h1>
+<div class="meta">Translation Export</div>
+<div class="section"><div class="label">${d.leftLabel}</div><p>${d.leftText.replace(/\n/g, "<br>")}</p></div>
+<div class="section"><div class="label">${d.rightLabel}</div><p>${d.rightText.replace(/\n/g, "<br>")}</p></div>
+</body></html>`;
+          const path = require("path");
+          const os = require("os");
+          const fs = require("fs");
+          const fileName = `${d.title.replace(/[^a-z0-9]/gi, "_").slice(0, 50)}_translation.doc`;
+          const filePath = path.join(
+            downloadPath || os.homedir() + "/Downloads",
+            fileName,
+          );
+          fs.writeFileSync(filePath, html, "utf8");
+          btn.innerHTML = `<span class="material-symbols-outlined text-sm">check</span> Saved to Downloads`;
+          setTimeout(() => {
+            btn.innerHTML = `<span class="material-symbols-outlined text-sm">download</span> Download Word Doc`;
+            btn.disabled = false;
+          }, 2500);
+        } catch (e) {
+          btn.innerHTML = `<span class="material-symbols-outlined text-sm">download</span> .doc`;
+          btn.disabled = false;
+        }
+      }
+
+      // Pre-load summary + transcript state when opening detail
+      function loadAiPanelForVideo(video) {
+        // Summary tab
+        const content = document.getElementById("summary-content");
+        const key = summaryLang === "ko" ? "summaryKo" : "summary";
+        if (content) {
+          if (video[key]) {
+            showSummaryContent(video[key]);
+          } else {
+            content.innerHTML = `<p class="text-xs text-gray-400 text-center pt-8">No summary yet. Click Generate below.</p>`;
+            const btn = document.getElementById("summary-btn");
+            if (btn)
+              btn.innerHTML = `<span class="material-symbols-outlined text-sm">auto_awesome</span> Generate Summary`;
+          }
+        }
+        // Transcript label
+        const lbl = document.getElementById("fetch-transcript-label");
+        if (lbl)
+          lbl.textContent = video.transcript
+            ? "✓ Transcript Ready"
+            : "Fetch Transcript";
+        // Auto-set translate direction based on transcript language
+        const transcriptIsKorean =
+          video.transcript &&
+          /[\uAC00-\uD7AF]/.test(video.transcript.slice(0, 200));
+        const dirSelect = document.getElementById("translate-direction");
+        if (dirSelect && transcriptIsKorean) dirSelect.value = "ko-en";
+        else if (dirSelect) dirSelect.value = "en-ko";
+        // Reset translation panel
+        setTranslateState("idle");
+        _originalText = "";
+        _translatedText = "";
+        window._translationData = null;
+        switchAiTab("tags");
+      }
+
+      navigateTo("dashboard");
+      initFirebase().then(() => loadUniversalTags());
+    </script>
+  </body>
+</html>
