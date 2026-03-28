@@ -1,10 +1,17 @@
 {
   "manifest_version": 3,
-  "name": "The Video Collector",
+  "name": "File Collector — Video Collector",
   "version": "1.0",
-  "description": "Collect YouTube videos directly into your desktop app with one click.",
-  "permissions": ["activeTab", "scripting", "storage"],
-  "host_permissions": ["*://*.youtube.com/*"],
+  "description": "Collect YouTube videos directly into The Video Collector app",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "*://*.youtube.com/*",
+    "https://firestore.googleapis.com/*"
+  ],
   "content_scripts": [
     {
       "matches": ["*://*.youtube.com/watch*", "*://*.youtube.com/shorts/*"],
@@ -13,8 +20,7 @@
     }
   ],
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "service_worker": "background.js"
   },
   "icons": {
     "48": "icon48.png",
@@ -22,6 +28,6 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "The Video Collector"
+    "default_title": "File Collector"
   }
 }

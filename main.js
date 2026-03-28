@@ -42,3 +42,8 @@ app.on("window-all-closed", () => {
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
+
+// Load .env in development, use process.env in production (injected at build time)
+if (!app.isPackaged) {
+  require("dotenv").config();
+}

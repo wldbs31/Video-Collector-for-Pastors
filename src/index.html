@@ -1,6 +1,7 @@
 <!doctype html>
 <html class="light" lang="en">
   <head>
+    <script src="env.js"></script>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
     <title>The Video Collector 비디오컬렉터</title>
@@ -13,6 +14,7 @@
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
       rel="stylesheet"
     />
+
     <script id="tailwind-config">
       tailwind.config = {
         darkMode: "class",
@@ -45,6 +47,21 @@
       };
     </script>
     <style>
+      @font-face {
+        font-family: "Yangjin";
+        src: url("https://cdn.jsdelivr.net/gh/supernovice-lab/font@0.9/yangjin.woff")
+          format("woff");
+        font-weight: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: "OngleipKonkon";
+        src: url("https://cdn.jsdelivr.net/gh/projectnoonnu/2412-1@1.0/Ownglyph_corncorn-Rg.woff2")
+          format("woff2");
+        font-weight: normal;
+        font-display: swap;
+      }
       body {
         background: linear-gradient(
           160deg,
@@ -273,13 +290,36 @@
       style="background: #c7d2fe; top: 40%; right: 20%"
     ></div>
 
+    <!-- Startup loading — shown while Firebase checks persisted auth -->
+    <div
+      id="startup-loading"
+      class="fixed inset-0 flex items-center justify-center bg-white"
+      style="z-index: 9999"
+    >
+      <div class="text-center space-y-4">
+        <div
+          class="w-14 h-14 rounded-2xl accent-gradient flex items-center justify-center mx-auto shadow-lg shadow-indigo-200"
+        >
+          <span
+            class="material-symbols-outlined text-white text-2xl"
+            style="font-variation-settings: &quot;FILL&quot; 1"
+            >video_library</span
+          >
+        </div>
+        <div
+          class="w-6 h-6 rounded-full border-2 border-indigo-200 border-t-indigo-500 animate-spin mx-auto"
+        ></div>
+      </div>
+    </div>
+
     <!-- ═══════════════════════════════════════════════
      LOGIN SCREEN — shown until user signs in
 ═══════════════════════════════════════════════ -->
     <div
       id="login-screen"
-      class="fixed inset-0 z-[100] flex items-center justify-center"
+      class="fixed inset-0 flex items-center justify-center"
       style="
+        z-index: 9000;
         background: linear-gradient(
           160deg,
           #dde4f5 0%,
@@ -290,7 +330,7 @@
       "
     >
       <div
-        class="bg-white rounded-3xl shadow-2xl shadow-indigo-100 p-10 w-full max-w-sm mx-6 space-y-8 text-center"
+        class="bg-white rounded-3xl shadow-2xl shadow-indigo-100 p-10 w-full max-w-sm mx-6 space-y-6 text-center"
       >
         <!-- Logo -->
         <div class="space-y-3">
@@ -311,49 +351,83 @@
           </div>
         </div>
 
-        <!-- Sign in -->
-        <div class="space-y-4">
-          <p class="text-sm text-gray-500">
-            Sign in to access your personal video archive
-          </p>
+        <!-- Tab toggle -->
+        <div class="flex p-1 rounded-xl" style="background: #f0f2f8">
           <button
-            onclick="signInWithGoogle()"
-            id="google-signin-btn"
-            class="w-full flex items-center justify-center gap-3 py-3.5 px-6 rounded-2xl border-2 border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all font-semibold text-sm text-gray-700 group"
+            onclick="showAuthTab('signin')"
+            id="tab-signin"
+            class="auth-tab flex-1 py-2 rounded-lg text-xs font-bold bg-white text-primary shadow-sm transition-all"
           >
-            <!-- Google logo SVG -->
-            <svg width="20" height="20" viewBox="0 0 48 48">
-              <path
-                fill="#EA4335"
-                d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
-              />
-              <path
-                fill="#4285F4"
-                d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
-              />
-              <path
-                fill="#34A853"
-                d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
-              />
-              <path fill="none" d="M0 0h48v48H0z" />
-            </svg>
-            <span>Continue with Google</span>
+            Sign In
+          </button>
+          <button
+            onclick="showAuthTab('register')"
+            id="tab-register"
+            class="auth-tab flex-1 py-2 rounded-lg text-xs font-semibold text-gray-500 transition-all"
+          >
+            Create Account
           </button>
         </div>
 
-        <!-- Loading state -->
-        <div id="login-loading" class="hidden space-y-2">
-          <div
-            class="w-8 h-8 rounded-full border-2 border-indigo-300 border-t-indigo-600 animate-spin mx-auto"
-          ></div>
-          <p class="text-xs text-gray-400">Signing in...</p>
+        <!-- Form -->
+        <div class="space-y-3 text-left">
+          <div id="register-name-field" class="hidden">
+            <label class="text-xs font-semibold text-gray-500 mb-1 block"
+              >Name</label
+            >
+            <input
+              id="auth-name"
+              type="text"
+              placeholder="Your name"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-primary placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all"
+            />
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-gray-500 mb-1 block"
+              >Email</label
+            >
+            <input
+              id="auth-email"
+              type="email"
+              placeholder="you@example.com"
+              onkeydown="if (event.key === 'Enter') submitAuth();"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-primary placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all"
+            />
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-gray-500 mb-1 block"
+              >Password</label
+            >
+            <input
+              id="auth-password"
+              type="password"
+              placeholder="••••••••"
+              onkeydown="if (event.key === 'Enter') submitAuth();"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm text-primary placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 transition-all"
+            />
+          </div>
         </div>
 
-        <!-- Error state -->
+        <button
+          onclick="submitAuth()"
+          id="auth-submit-btn"
+          class="w-full py-3.5 rounded-2xl collect-btn-gradient text-white font-bold text-sm hover:opacity-90 transition-all shadow-md shadow-indigo-200"
+        >
+          Sign In
+        </button>
+
+        <!-- Loading -->
+        <div
+          id="login-loading"
+          class="hidden flex items-center justify-center gap-2"
+        >
+          <div
+            class="w-5 h-5 rounded-full border-2 border-indigo-300 border-t-indigo-600 animate-spin"
+          ></div>
+          <p class="text-xs text-gray-400">Please wait...</p>
+        </div>
+
+        <!-- Error -->
         <div
           id="login-error"
           class="hidden p-3 rounded-xl bg-red-50 border border-red-100"
@@ -361,6 +435,12 @@
           <p id="login-error-msg" class="text-xs text-red-500 font-medium"></p>
         </div>
 
+        <button
+          onclick="resetPassword()"
+          class="text-xs text-indigo-400 hover:text-indigo-600 transition-colors"
+        >
+          Forgot password?
+        </button>
         <p class="text-[10px] text-gray-400">
           Your collection is private and only visible to you.
         </p>
@@ -508,14 +588,16 @@
           <section class="max-w-4xl mx-auto text-center space-y-10 pt-10">
             <div class="space-y-4">
               <h2
+                style="font-family: &quot;Yangjin&quot;"
                 class="text-6xl font-headline font-extrabold tracking-tighter text-primary"
               >
-                유튜브 비디오 <span class="text-secondary">컬렉터</span>
+                스마일 비디오 <span class="text-secondary">컬렉터</span>
               </h2>
               <p
+                style="font-family: &quot;OngleipKonkon&quot;"
                 class="max-w-xl mx-auto font-body text-lg leading-relaxed text-on-surface-variant"
               >
-                Paste a YouTube link to collect, archive, and organize.
+                "In everything give thanks" 오늘도 스마일 😆☁️
               </p>
             </div>
             <!-- URL input -->
@@ -1265,7 +1347,27 @@
             </p>
           </section>
 
-          <!-- Storage destination -->
+          <!-- Dependencies status -->
+          <section class="max-w-5xl">
+            <div
+              id="deps-card"
+              class="glass-card-white rounded-2xl p-6 border border-gray-100"
+            >
+              <div class="flex items-center gap-3 mb-4">
+                <div class="p-2 rounded-lg" style="background: #f0f2f8">
+                  <span class="material-symbols-outlined text-secondary"
+                    >build</span
+                  >
+                </div>
+                <h3 class="font-headline text-lg font-bold text-primary">
+                  Download Engine
+                </h3>
+              </div>
+              <div id="deps-status" class="space-y-2 text-sm text-gray-500">
+                Checking...
+              </div>
+            </div>
+          </section>
           <section class="max-w-5xl">
             <div
               class="glass-panel rounded-xl p-8 flex flex-col justify-between border border-slate-200"
@@ -1391,7 +1493,9 @@
     <script>
       // ─── State ───────────────────────────────────────
       // !! PASTE YOUR ANTHROPIC API KEY HERE !!
-      const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
+      const ENV = window.__ENV__ || {};
+      const ANTHROPIC_API_KEY =
+        ENV.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY || "";
 
       let currentScreen = "dashboard";
       let selectedQuality = "1080p";
@@ -1439,6 +1543,9 @@
           }
           if (screen === "dashboard") {
             renderRecentVideos(videos);
+          }
+          if (screen === "settings") {
+            checkDepsStatus();
           }
         });
       }
@@ -1534,7 +1641,7 @@
           const cleanUrl = normalizeYouTubeUrl(url);
           try {
             const { spawn } = require("child_process");
-            const proc = spawn("/opt/homebrew/bin/yt-dlp", [
+            const proc = spawn(getBinPaths().ytdlp, [
               "--get-title",
               "--no-playlist",
               "--cookies-from-browser",
@@ -1939,9 +2046,8 @@
         const { spawn } = require("child_process");
 
         const destPath = downloadPath || path.join(os.homedir(), "Downloads");
-        const ytdlpBin = "/opt/homebrew/bin/yt-dlp";
+        const { ytdlp: ytdlpBin, ffmpeg: ffmpegBin } = getBinPaths();
         const outputTemplate = path.join(destPath, "%(title)s.%(ext)s");
-        const ffmpegBin = "/opt/homebrew/bin/ffmpeg";
 
         // Shorts are vertical and often only have one combined stream — use best available
         const videoFormat = isShort
@@ -2137,18 +2243,29 @@
           } = require("firebase/firestore");
           const {
             getAuth,
-            GoogleAuthProvider,
-            signInWithPopup,
             onAuthStateChanged,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            sendPasswordResetEmail,
+            updateProfile,
+            indexedDBLocalPersistence,
+            setPersistence,
           } = require("firebase/auth");
 
+          const ENV = window.__ENV__ || {};
           const firebaseConfig = {
-            apiKey: process.env.FIREBASE_API_KEY || "",
-            authDomain: process.env.FIREBASE_AUTH_DOMAIN || "",
-            projectId: process.env.FIREBASE_PROJECT_ID || "",
-            storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "",
-            messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || "",
-            appId: process.env.FIREBASE_APP_ID || "",
+            apiKey: ENV.FIREBASE_API_KEY || process.env.FIREBASE_API_KEY,
+            authDomain:
+              ENV.FIREBASE_AUTH_DOMAIN || process.env.FIREBASE_AUTH_DOMAIN,
+            projectId:
+              ENV.FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID,
+            storageBucket:
+              ENV.FIREBASE_STORAGE_BUCKET ||
+              process.env.FIREBASE_STORAGE_BUCKET,
+            messagingSenderId:
+              ENV.FIREBASE_MESSAGING_SENDER_ID ||
+              process.env.FIREBASE_MESSAGING_SENDER_ID,
+            appId: ENV.FIREBASE_APP_ID || process.env.FIREBASE_APP_ID,
           };
 
           const app =
@@ -2157,6 +2274,13 @@
               : getApps()[0];
           db = getFirestore(app);
           const auth = getAuth(app);
+
+          // indexedDBLocalPersistence works in Electron — browserLocalPersistence does not
+          try {
+            await setPersistence(auth, indexedDBLocalPersistence);
+          } catch (e) {
+            console.warn("Persistence:", e.message);
+          }
 
           window._fb = {
             collection,
@@ -2168,27 +2292,102 @@
             getDoc,
             Timestamp,
           };
-          window._auth = { auth, GoogleAuthProvider, signInWithPopup };
+          window._auth = {
+            auth,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            sendPasswordResetEmail,
+            updateProfile,
+          };
 
-          // Listen for auth state changes
-          onAuthStateChanged(auth, (user) => {
-            if (user) {
-              // User signed in
-              currentUser = user;
-              showApp(user);
-              subscribeToUserVideos(user.uid);
-              loadUniversalTags();
-            } else {
-              // User signed out
-              currentUser = null;
-              if (unsubscribeVideos) {
-                unsubscribeVideos();
-                unsubscribeVideos = null;
+          // Helper to authenticate Firestore SDK after REST login
+          window._signInSdk = async (email, password) => {
+            try {
+              await signInWithEmailAndPassword(auth, email, password);
+            } catch (e) {
+              console.warn("SDK auth:", e.message);
+            }
+          };
+          const saved = localStorage.getItem("vc_session");
+          if (saved) {
+            try {
+              const session = JSON.parse(saved);
+              // Verify token is still valid
+              const res = await fetch(
+                `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${firebaseConfig.apiKey}`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ idToken: session.idToken }),
+                },
+              );
+              const data = await res.json();
+              if (data.users?.[0]) {
+                currentUser = session;
+                const loader = document.getElementById("startup-loading");
+                if (loader) loader.remove();
+                showApp(currentUser);
+                subscribeToUserVideos(session.uid);
+                loadUniversalTags();
+                // Update lastSeen so extension knows this user is active
+                window._fb
+                  ?.setDoc(window._fb.doc(db, "activeUsers", session.uid), {
+                    uid: session.uid,
+                    email: session.email,
+                    lastSeen: new Date().toISOString(),
+                  })
+                  .catch(console.warn);
+              } else {
+                // Token expired — try refresh
+                const refreshRes = await fetch(
+                  `https://securetoken.googleapis.com/v1/token?key=${firebaseConfig.apiKey}`,
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      grant_type: "refresh_token",
+                      refresh_token: session.refreshToken,
+                    }),
+                  },
+                );
+                const refreshData = await refreshRes.json();
+                if (refreshData.id_token) {
+                  session.idToken = refreshData.id_token;
+                  session.refreshToken = refreshData.refresh_token;
+                  localStorage.setItem("vc_session", JSON.stringify(session));
+                  currentUser = session;
+                  const loader = document.getElementById("startup-loading");
+                  if (loader) loader.remove();
+                  showApp(currentUser);
+                  subscribeToUserVideos(session.uid);
+                  loadUniversalTags();
+                  // Update lastSeen
+                  window._fb
+                    ?.setDoc(window._fb.doc(db, "activeUsers", session.uid), {
+                      uid: session.uid,
+                      email: session.email,
+                      lastSeen: new Date().toISOString(),
+                    })
+                    .catch(console.warn);
+                } else {
+                  localStorage.removeItem("vc_session");
+                  const loader = document.getElementById("startup-loading");
+                  if (loader) loader.remove();
+                  showLoginScreen();
+                }
               }
-              videos = [];
+            } catch (e) {
+              console.warn("Session restore failed:", e);
+              localStorage.removeItem("vc_session");
+              const loader = document.getElementById("startup-loading");
+              if (loader) loader.remove();
               showLoginScreen();
             }
-          });
+          } else {
+            const loader = document.getElementById("startup-loading");
+            if (loader) loader.remove();
+            showLoginScreen();
+          }
         } catch (e) {
           console.error("Firebase init error:", e);
         }
@@ -2249,9 +2448,14 @@
         const name = document.getElementById("user-name");
         const email = document.getElementById("user-email");
         const signoutBtn = document.getElementById("signout-btn");
-        if (user.photoURL) avatar.src = user.photoURL;
-        else
-          avatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email)}&background=6366f1&color=fff`;
+        if (user.photoURL) {
+          avatar.src = user.photoURL;
+        } else {
+          const initials = (user.displayName || user.email || "U")
+            .charAt(0)
+            .toUpperCase();
+          avatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email)}&background=6366f1&color=fff&size=64`;
+        }
         name.textContent = user.displayName || "User";
         email.textContent = user.email;
         profile.classList.remove("hidden");
@@ -2259,37 +2463,207 @@
         navigateTo("dashboard");
       }
 
-      async function signInWithGoogle() {
-        const btn = document.getElementById("google-signin-btn");
+      // ─── Auth tab toggle ─────────────────────────────
+      let authMode = "signin";
+      function showAuthTab(mode) {
+        authMode = mode;
+        const isSignin = mode === "signin";
+        document.getElementById("tab-signin").className = isSignin
+          ? "auth-tab flex-1 py-2 rounded-lg text-xs font-bold bg-white text-primary shadow-sm transition-all"
+          : "auth-tab flex-1 py-2 rounded-lg text-xs font-semibold text-gray-500 transition-all";
+        document.getElementById("tab-register").className = !isSignin
+          ? "auth-tab flex-1 py-2 rounded-lg text-xs font-bold bg-white text-primary shadow-sm transition-all"
+          : "auth-tab flex-1 py-2 rounded-lg text-xs font-semibold text-gray-500 transition-all";
+        document
+          .getElementById("register-name-field")
+          .classList.toggle("hidden", isSignin);
+        document.getElementById("auth-submit-btn").textContent = isSignin
+          ? "Sign In"
+          : "Create Account";
+        document.getElementById("login-error").classList.add("hidden");
+      }
+
+      async function submitAuth() {
+        const email = document.getElementById("auth-email").value.trim();
+        const password = document.getElementById("auth-password").value;
+        const name = document.getElementById("auth-name").value.trim();
+        const btn = document.getElementById("auth-submit-btn");
         const loading = document.getElementById("login-loading");
-        const error = document.getElementById("login-error");
+
+        if (!email || !password) {
+          showAuthError("Please enter your email and password.");
+          return;
+        }
+        if (authMode === "register" && !name) {
+          showAuthError("Please enter your name.");
+          return;
+        }
+
         btn.classList.add("hidden");
         loading.classList.remove("hidden");
-        error.classList.add("hidden");
+        document.getElementById("login-error").classList.add("hidden");
+
+        const apiKey =
+          (window.__ENV__ || {}).FIREBASE_API_KEY ||
+          process.env.FIREBASE_API_KEY;
+
         try {
-          const { auth, GoogleAuthProvider, signInWithPopup } = window._auth;
-          const provider = new GoogleAuthProvider();
-          await signInWithPopup(auth, provider);
-          // onAuthStateChanged will handle the rest
-        } catch (e) {
-          btn.classList.remove("hidden");
+          // Step 1 — Create or sign in via Firebase REST API (works in Electron)
+          const endpoint =
+            authMode === "register"
+              ? `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${apiKey}`
+              : `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`;
+
+          const res = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password, returnSecureToken: true }),
+          });
+          const data = await res.json();
+
+          if (data.error) {
+            const code = data.error.message;
+            const msg = code.includes("EMAIL_EXISTS")
+              ? "An account already exists with this email."
+              : code.includes("EMAIL_NOT_FOUND")
+                ? "No account found with this email."
+                : code.includes("INVALID_PASSWORD")
+                  ? "Incorrect password."
+                  : code.includes("INVALID_LOGIN_CREDENTIALS")
+                    ? "Incorrect email or password."
+                    : code.includes("WEAK_PASSWORD")
+                      ? "Password must be at least 6 characters."
+                      : code.includes("INVALID_EMAIL")
+                        ? "Please enter a valid email address."
+                        : code.includes("TOO_MANY_ATTEMPTS")
+                          ? "Too many attempts. Try again later."
+                          : data.error.message;
+            showAuthError(msg);
+            return;
+          }
+
+          const { idToken, refreshToken, localId: uid } = data;
+
+          // Step 2 — Update display name if registering
+          if (authMode === "register" && name) {
+            await fetch(
+              `https://identitytoolkit.googleapis.com/v1/accounts:update?key=${apiKey}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  idToken,
+                  displayName: name,
+                  returnSecureToken: false,
+                }),
+              },
+            );
+          }
+
+          // Step 3 — Get full user profile
+          const profileRes = await fetch(
+            `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ idToken }),
+            },
+          );
+          const profileData = await profileRes.json();
+          const userInfo = profileData.users?.[0] || {};
+
+          // Step 4 — Set currentUser manually and show app
+          currentUser = {
+            uid,
+            email,
+            displayName: userInfo.displayName || name || email.split("@")[0],
+            photoURL: userInfo.photoUrl || null,
+            idToken,
+            refreshToken,
+          };
+
+          // Save session to localStorage for persistence
+          localStorage.setItem(
+            "vc_session",
+            JSON.stringify({
+              uid,
+              email,
+              displayName: currentUser.displayName,
+              photoURL: currentUser.photoURL,
+              idToken,
+              refreshToken,
+            }),
+          );
+
           loading.classList.add("hidden");
-          error.classList.remove("hidden");
-          document.getElementById("login-error-msg").textContent =
-            e.message.includes("popup-closed")
-              ? "Sign-in cancelled."
-              : e.message;
+          btn.classList.remove("hidden");
+          showApp(currentUser);
+          subscribeToUserVideos(uid);
+          loadUniversalTags();
+
+          // Write to activeUsers so Chrome extension knows who's logged in
+          window._fb
+            .setDoc(window._fb.doc(db, "activeUsers", uid), {
+              uid,
+              email,
+              lastSeen: new Date().toISOString(),
+            })
+            .then(() => console.log("activeUsers written for:", uid))
+            .catch((e) => console.warn("activeUsers write failed:", e));
+
+          // Also sign in via SDK in background so Firestore auth works
+          if (window._signInSdk) window._signInSdk(email, password);
+        } catch (e) {
+          showAuthError("Network error: " + e.message);
         }
       }
 
-      async function signOut() {
-        try {
-          const { auth } = window._auth;
-          const { signOut: fbSignOut } = require("firebase/auth");
-          await fbSignOut(auth);
-        } catch (e) {
-          console.error(e);
+      function showAuthError(msg) {
+        const el = document.getElementById("login-error");
+        document.getElementById("login-error-msg").textContent = msg;
+        el.classList.remove("hidden");
+        document.getElementById("login-loading").classList.add("hidden");
+        document.getElementById("auth-submit-btn").classList.remove("hidden");
+      }
+
+      async function resetPassword() {
+        const email = document.getElementById("auth-email").value.trim();
+        if (!email) {
+          showAuthError("Enter your email above first.");
+          return;
         }
+        try {
+          const res = await fetch(
+            `https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key=${(window.__ENV__ || {}).FIREBASE_API_KEY || process.env.FIREBASE_API_KEY}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ requestType: "PASSWORD_RESET", email }),
+            },
+          );
+          const data = await res.json();
+          if (data.error) {
+            showAuthError(data.error.message);
+            return;
+          }
+          document.getElementById("login-error-msg").textContent =
+            "✓ Password reset email sent. Check your inbox.";
+          document.getElementById("login-error-msg").style.color = "#16a34a";
+          document.getElementById("login-error").classList.remove("hidden");
+        } catch (e) {
+          showAuthError(e.message);
+        }
+      }
+
+      function signOut() {
+        localStorage.removeItem("vc_session");
+        currentUser = null;
+        if (unsubscribeVideos) {
+          unsubscribeVideos();
+          unsubscribeVideos = null;
+        }
+        videos = [];
+        showLoginScreen();
       }
 
       // ─── searchAndRender — unified gallery + search ───
@@ -2423,6 +2797,74 @@
         }
       }
 
+      // ─── Cross-platform binary paths ─────────────────
+      function getBinPaths() {
+        const path = require("path");
+        const fs = require("fs");
+        const platform = process.platform;
+
+        if (platform === "win32") {
+          const base =
+            process.env.LOCALAPPDATA || process.env.USERPROFILE || "C:\\";
+          const winYtdlp = [
+            path.join(base, "Microsoft", "WinGet", "Links", "yt-dlp.exe"),
+            path.join(
+              process.env.USERPROFILE || "",
+              "scoop",
+              "shims",
+              "yt-dlp.exe",
+            ),
+            "C:\\yt-dlp\\yt-dlp.exe",
+            path.join(
+              process.env.ProgramFiles || "C:\\Program Files",
+              "yt-dlp",
+              "yt-dlp.exe",
+            ),
+          ];
+          const winFfmpeg = [
+            path.join(
+              process.env.USERPROFILE || "",
+              "scoop",
+              "shims",
+              "ffmpeg.exe",
+            ),
+            "C:\\ffmpeg\\bin\\ffmpeg.exe",
+            path.join(
+              process.env.ProgramFiles || "C:\\Program Files",
+              "ffmpeg",
+              "bin",
+              "ffmpeg.exe",
+            ),
+          ];
+          const ytdlp =
+            winYtdlp.find((p) => {
+              try {
+                return fs.existsSync(p);
+              } catch {
+                return false;
+              }
+            }) || "yt-dlp";
+          const ffmpeg =
+            winFfmpeg.find((p) => {
+              try {
+                return fs.existsSync(p);
+              } catch {
+                return false;
+              }
+            }) || "ffmpeg";
+          return { ytdlp, ffmpeg };
+        } else {
+          // macOS — check Apple Silicon first, then Intel
+          const ytdlp = fs.existsSync("/opt/homebrew/bin/yt-dlp")
+            ? "/opt/homebrew/bin/yt-dlp"
+            : "/usr/local/bin/yt-dlp";
+          const ffmpeg = fs.existsSync("/opt/homebrew/bin/ffmpeg")
+            ? "/opt/homebrew/bin/ffmpeg"
+            : "/usr/local/bin/ffmpeg";
+          return { ytdlp, ffmpeg };
+        }
+      }
+
       // ─── URL normalizer — handles regular, Shorts, and playlist URLs ───
       function normalizeYouTubeUrl(url) {
         // Convert Shorts URL to standard watch URL
@@ -2467,8 +2909,8 @@
         const tmpDir = os.tmpdir();
         const videoId = url.match(/[?&]v=([^&]+)/)?.[1] || vid;
         const outPath = path.join(tmpDir, videoId + ".%(ext)s");
+        const { ytdlp: ytdlpBin, ffmpeg: ffmpegBin } = getBinPaths();
 
-        // Try auto-generated subtitles first, then manual, multiple lang codes
         const args = [
           url,
           "--no-playlist",
@@ -2484,18 +2926,13 @@
           "--sleep-interval",
           "2",
           "--ffmpeg-location",
-          "/opt/homebrew/bin/ffmpeg",
+          ffmpegBin,
           "-o",
           outPath,
         ];
 
-        console.log(
-          "fetchTranscript running:",
-          "/opt/homebrew/bin/yt-dlp",
-          args.join(" "),
-        );
-
-        const proc = spawn("/opt/homebrew/bin/yt-dlp", args);
+        console.log("fetchTranscript running:", ytdlpBin, args.join(" "));
+        const proc = spawn(ytdlpBin, args);
         let subtitleFile = "";
         let stdoutAll = "";
         let stderrAll = "";
@@ -2962,6 +3399,42 @@
         _translatedText = "";
         window._translationData = null;
         switchAiTab("tags");
+      }
+
+      // ─── Dependency status check ──────────────────────
+      function checkDepsStatus() {
+        const el = document.getElementById("deps-status");
+        if (!el) return;
+        const fs = require("fs");
+        const { ytdlp, ffmpeg } = getBinPaths();
+        const hasYtdlp =
+          fs.existsSync(ytdlp) || ytdlp === "yt-dlp" || ytdlp === "yt-dlp.exe";
+        const hasFfmpeg =
+          fs.existsSync(ffmpeg) ||
+          ffmpeg === "ffmpeg" ||
+          ffmpeg === "ffmpeg.exe";
+        const isWin = process.platform === "win32";
+
+        const status = (ok, label, path, installCmd) => `
+          <div class="flex items-start gap-3 p-3 rounded-xl ${ok ? "bg-green-50" : "bg-amber-50"}">
+            <span class="material-symbols-outlined text-sm mt-0.5 ${ok ? "text-green-500" : "text-amber-500"}"
+                  style="font-variation-settings:'FILL' 1;">${ok ? "check_circle" : "warning"}</span>
+            <div class="flex-1">
+              <p class="text-sm font-semibold ${ok ? "text-green-700" : "text-amber-700"}">${label} — ${ok ? "Found" : "Not found"}</p>
+              <p class="text-xs ${ok ? "text-green-600" : "text-amber-600"} mt-0.5">${ok ? path : installCmd}</p>
+            </div>
+          </div>`;
+
+        const winYtdlp =
+          "Install: winget install yt-dlp  (run PowerShell as Admin)";
+        const winFfmpeg =
+          "Install: winget install ffmpeg  (run PowerShell as Admin)";
+        const macYtdlp = "Install: brew install yt-dlp";
+        const macFfmpeg = "Install: brew install ffmpeg";
+
+        el.innerHTML =
+          status(hasYtdlp, "yt-dlp", ytdlp, isWin ? winYtdlp : macYtdlp) +
+          status(hasFfmpeg, "ffmpeg", ffmpeg, isWin ? winFfmpeg : macFfmpeg);
       }
 
       // ─── Init ─────────────────────────────────────────

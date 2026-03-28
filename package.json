@@ -5,9 +5,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build:mac": "electron-builder --mac --publish never",
-    "build:win": "electron-builder --win --publish never",
-    "build:all": "electron-builder --mac --win --publish never"
+    "build:mac": "node scripts/inject-env.js && electron-builder --mac --publish never",
+    "build:win": "node scripts/inject-env.js && electron-builder --win --publish never"
   },
   "build": {
     "appId": "com.videocollector.app",
@@ -64,6 +63,7 @@
   },
   "dependencies": {
     "dotenv": "^17.3.1",
+    "electron-updater": "^6.8.3",
     "firebase": "^10.12.0"
   }
 }
