@@ -227,6 +227,9 @@
           transform-origin: right;
         }
       }
+      .animate-spin {
+        animation: spin 1s linear infinite;
+      }
       .video-card {
         transition:
           transform 0.2s,
@@ -271,8 +274,98 @@
     ></div>
 
     <!-- ═══════════════════════════════════════════════
-     SIDEBAR — white, clean, organized
+     LOGIN SCREEN — shown until user signs in
 ═══════════════════════════════════════════════ -->
+    <div
+      id="login-screen"
+      class="fixed inset-0 z-[100] flex items-center justify-center"
+      style="
+        background: linear-gradient(
+          160deg,
+          #dde4f5 0%,
+          #c8d0ec 40%,
+          #d4d8f0 70%,
+          #cdd5ee 100%
+        );
+      "
+    >
+      <div
+        class="bg-white rounded-3xl shadow-2xl shadow-indigo-100 p-10 w-full max-w-sm mx-6 space-y-8 text-center"
+      >
+        <!-- Logo -->
+        <div class="space-y-3">
+          <div
+            class="w-16 h-16 rounded-2xl accent-gradient flex items-center justify-center mx-auto shadow-lg shadow-indigo-200"
+          >
+            <span
+              class="material-symbols-outlined text-white text-3xl"
+              style="font-variation-settings: &quot;FILL&quot; 1"
+              >video_library</span
+            >
+          </div>
+          <div>
+            <h1 class="text-xl font-black text-primary font-headline">
+              The Video Collector
+            </h1>
+            <p class="text-sm text-gray-400 font-medium mt-1">비디오컬렉터</p>
+          </div>
+        </div>
+
+        <!-- Sign in -->
+        <div class="space-y-4">
+          <p class="text-sm text-gray-500">
+            Sign in to access your personal video archive
+          </p>
+          <button
+            onclick="signInWithGoogle()"
+            id="google-signin-btn"
+            class="w-full flex items-center justify-center gap-3 py-3.5 px-6 rounded-2xl border-2 border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all font-semibold text-sm text-gray-700 group"
+          >
+            <!-- Google logo SVG -->
+            <svg width="20" height="20" viewBox="0 0 48 48">
+              <path
+                fill="#EA4335"
+                d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+              />
+              <path
+                fill="#4285F4"
+                d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
+              />
+              <path
+                fill="#34A853"
+                d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+              />
+              <path fill="none" d="M0 0h48v48H0z" />
+            </svg>
+            <span>Continue with Google</span>
+          </button>
+        </div>
+
+        <!-- Loading state -->
+        <div id="login-loading" class="hidden space-y-2">
+          <div
+            class="w-8 h-8 rounded-full border-2 border-indigo-300 border-t-indigo-600 animate-spin mx-auto"
+          ></div>
+          <p class="text-xs text-gray-400">Signing in...</p>
+        </div>
+
+        <!-- Error state -->
+        <div
+          id="login-error"
+          class="hidden p-3 rounded-xl bg-red-50 border border-red-100"
+        >
+          <p id="login-error-msg" class="text-xs text-red-500 font-medium"></p>
+        </div>
+
+        <p class="text-[10px] text-gray-400">
+          Your collection is private and only visible to you.
+        </p>
+      </div>
+    </div>
     <aside
       class="glass-sidebar h-screen w-64 fixed left-0 top-0 flex flex-col z-50"
       style="-webkit-app-region: drag"
@@ -355,9 +448,33 @@
         ></div>
       </div>
 
-      <!-- Footer -->
-      <div class="px-6 py-4 border-t border-gray-100">
-        <p class="text-[10px] text-gray-400 font-medium">
+      <!-- User profile + sign out -->
+      <div class="px-4 py-4 border-t border-gray-100 space-y-3">
+        <div id="user-profile" class="hidden flex items-center gap-3 px-2">
+          <img
+            id="user-avatar"
+            src=""
+            alt=""
+            class="w-8 h-8 rounded-full object-cover border-2 border-indigo-100"
+          />
+          <div class="flex-1 min-w-0">
+            <p
+              id="user-name"
+              class="text-xs font-bold text-primary truncate"
+            ></p>
+            <p id="user-email" class="text-[10px] text-gray-400 truncate"></p>
+          </div>
+        </div>
+        <button
+          onclick="signOut()"
+          id="signout-btn"
+          class="hidden w-full flex items-center justify-center gap-2 py-2 rounded-xl border border-gray-200 text-xs font-semibold text-gray-500 hover:bg-gray-50 hover:text-red-500 hover:border-red-200 transition-all"
+          style="-webkit-app-region: no-drag"
+        >
+          <span class="material-symbols-outlined text-sm">logout</span>
+          Sign Out
+        </button>
+        <p class="text-[10px] text-gray-400 font-medium px-2">
           v1.0.0 · Video Downloader App
         </p>
       </div>
@@ -393,12 +510,12 @@
               <h2
                 class="text-6xl font-headline font-extrabold tracking-tighter text-primary"
               >
-                📂 비디오 <span class="text-secondary">컬렉터</span>
+                유튜브 비디오 <span class="text-secondary">컬렉터</span>
               </h2>
               <p
                 class="max-w-xl mx-auto font-body text-lg leading-relaxed text-on-surface-variant"
               >
-                링크를 붙여넣거나 Google Extension 을 사용해주세요.
+                Paste a YouTube link to collect, archive, and organize.
               </p>
             </div>
             <!-- URL input -->
@@ -1246,7 +1363,24 @@
         <div
           class="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em]"
         >
-          System v1.0.0 · jiyunchoi31@gmail.com
+          System v1.0.0 · Jessica Jiyun Choi
+        </div>
+        <div class="flex gap-8">
+          <a
+            class="text-slate-400 font-bold text-[10px] uppercase tracking-widest hover:text-primary transition-colors"
+            href="#"
+            >Support</a
+          >
+          <a
+            class="text-slate-400 font-bold text-[10px] uppercase tracking-widest hover:text-primary transition-colors"
+            href="#"
+            >Privacy</a
+          >
+          <a
+            class="text-slate-400 font-bold text-[10px] uppercase tracking-widest hover:text-primary transition-colors"
+            href="#"
+            >Terms</a
+          >
         </div>
       </footer>
     </main>
@@ -1340,18 +1474,21 @@
           const title = await fetchVideoTitle(url, videoId);
 
           const { addDoc, collection, Timestamp } = window._fb;
-          const docRef = await addDoc(collection(db, "videos"), {
-            url: normalizedUrl,
-            title,
-            thumbnail,
-            tags: [],
-            transcript: "",
-            format: "mp4",
-            quality: "1080p",
-            downloadPath: "",
-            downloaded: false,
-            collectedAt: Timestamp.fromDate(new Date()),
-          });
+          const docRef = await addDoc(
+            collection(db, "users", currentUser.uid, "videos"),
+            {
+              url: normalizedUrl,
+              title,
+              thumbnail,
+              tags: [],
+              transcript: "",
+              format: "mp4",
+              quality: "1080p",
+              downloadPath: "",
+              downloaded: false,
+              collectedAt: Timestamp.fromDate(new Date()),
+            },
+          );
 
           // Immediately add to local array and re-render without waiting for snapshot
           const newVideo = {
@@ -1650,7 +1787,9 @@
         );
         try {
           const { setDoc, doc } = window._fb;
-          await setDoc(doc(db, "meta", "tags"), { custom });
+          await setDoc(doc(db, "users", currentUser.uid, "meta", "tags"), {
+            custom,
+          });
         } catch (e) {
           console.warn("Could not save universal tags", e);
         }
@@ -1659,7 +1798,9 @@
       async function loadUniversalTags() {
         try {
           const { getDoc, doc } = window._fb;
-          const snap = await getDoc(doc(db, "meta", "tags"));
+          const snap = await getDoc(
+            doc(db, "users", currentUser.uid, "meta", "tags"),
+          );
           if (snap.exists() && snap.data().custom) {
             snap.data().custom.forEach((t) => {
               if (!allKnownTags.includes(t)) allKnownTags.push(t);
@@ -1710,7 +1851,10 @@
         renderTags();
         try {
           const { updateDoc, doc } = window._fb;
-          await updateDoc(doc(db, "videos", selectedVideoId), { tags });
+          await updateDoc(
+            doc(db, "users", currentUser.uid, "videos", selectedVideoId),
+            { tags },
+          );
         } catch (e) {
           console.error(e);
         }
@@ -1737,9 +1881,10 @@
           tags.push(raw);
           if (selectedVideoId) {
             const { updateDoc, doc } = window._fb;
-            updateDoc(doc(db, "videos", selectedVideoId), { tags }).catch(
-              console.error,
-            );
+            updateDoc(
+              doc(db, "users", currentUser.uid, "videos", selectedVideoId),
+              { tags },
+            ).catch(console.error);
           }
         }
         input.value = "";
@@ -1756,9 +1901,10 @@
         renderTags();
         if (selectedVideoId) {
           const { updateDoc, doc } = window._fb;
-          updateDoc(doc(db, "videos", selectedVideoId), { tags }).catch(
-            console.error,
-          );
+          updateDoc(
+            doc(db, "users", currentUser.uid, "videos", selectedVideoId),
+            { tags },
+          ).catch(console.error);
         }
       }
 
@@ -1908,13 +2054,16 @@
             });
             try {
               const { updateDoc, doc } = window._fb;
-              await updateDoc(doc(db, "videos", vid), {
-                downloaded: true,
-                format,
-                quality: selectedQuality,
-                downloadPath: destPath,
-                localFile: localFilePath,
-              });
+              await updateDoc(
+                doc(db, "users", currentUser.uid, "videos", vid),
+                {
+                  downloaded: true,
+                  format,
+                  quality: selectedQuality,
+                  downloadPath: destPath,
+                  localFile: localFilePath,
+                },
+              );
             } catch (e) {
               console.error(e);
             }
@@ -1967,6 +2116,11 @@
       // ─── Firebase live sync ───────────────────────────
       let db; // shared Firestore instance
 
+      // ─── Auth state ──────────────────────────────────
+      let currentUser = null;
+      let unsubscribeVideos = null; // to unsubscribe when user changes
+
+      // ─── Firebase + Auth init ─────────────────────────
       async function initFirebase() {
         try {
           const { initializeApp, getApps } = require("firebase/app");
@@ -1981,23 +2135,29 @@
             getDoc,
             Timestamp,
           } = require("firebase/firestore");
+          const {
+            getAuth,
+            GoogleAuthProvider,
+            signInWithPopup,
+            onAuthStateChanged,
+          } = require("firebase/auth");
 
-const firebaseConfig = {
-  apiKey: process.env.FIREBASE_API_KEY || "",
-  authDomain: process.env.FIREBASE_AUTH_DOMAIN || "",
-  projectId: process.env.FIREBASE_PROJECT_ID || "",
-  storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "",
-  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || "",
-  appId: process.env.FIREBASE_APP_ID || "",
-};
+          const firebaseConfig = {
+            apiKey: process.env.FIREBASE_API_KEY || "",
+            authDomain: process.env.FIREBASE_AUTH_DOMAIN || "",
+            projectId: process.env.FIREBASE_PROJECT_ID || "",
+            storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "",
+            messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || "",
+            appId: process.env.FIREBASE_APP_ID || "",
+          };
 
           const app =
             getApps().length === 0
               ? initializeApp(firebaseConfig)
               : getApps()[0];
           db = getFirestore(app);
+          const auth = getAuth(app);
 
-          // Expose helpers globally so other functions can use them
           window._fb = {
             collection,
             onSnapshot,
@@ -2008,42 +2168,127 @@ const firebaseConfig = {
             getDoc,
             Timestamp,
           };
+          window._auth = { auth, GoogleAuthProvider, signInWithPopup };
 
-          onSnapshot(
-            collection(db, "videos"),
-            { includeMetadataChanges: true },
-            (snapshot) => {
-              const committed = snapshot.docs.filter(
-                (d) => !d.metadata.hasPendingWrites,
-              );
-              const source = committed.length > 0 ? committed : snapshot.docs;
-              videos = source.map((d) => ({ id: d.id, ...d.data() }));
-              // Sort newest first
-              videos.sort(
-                (a, b) =>
-                  (b.collectedAt?.seconds || 0) - (a.collectedAt?.seconds || 0),
-              );
-              // Use requestAnimationFrame so DOM is guaranteed ready before rendering
-              // Wrap each independently so an error in one never blocks the other
-              requestAnimationFrame(() => {
-                try {
-                  renderRecentVideos(videos);
-                } catch (e) {
-                  console.warn("renderRecentVideos error:", e);
-                }
-                try {
-                  searchAndRender(
-                    document.getElementById("organize-search")?.value || "",
-                  );
-                } catch (e) {
-                  console.warn("searchAndRender error:", e);
-                }
-              });
-              console.log("Firebase synced:", videos.length, "videos");
-            },
-          );
+          // Listen for auth state changes
+          onAuthStateChanged(auth, (user) => {
+            if (user) {
+              // User signed in
+              currentUser = user;
+              showApp(user);
+              subscribeToUserVideos(user.uid);
+              loadUniversalTags();
+            } else {
+              // User signed out
+              currentUser = null;
+              if (unsubscribeVideos) {
+                unsubscribeVideos();
+                unsubscribeVideos = null;
+              }
+              videos = [];
+              showLoginScreen();
+            }
+          });
         } catch (e) {
           console.error("Firebase init error:", e);
+        }
+      }
+
+      function subscribeToUserVideos(uid) {
+        // Unsubscribe from previous listener if any
+        if (unsubscribeVideos) unsubscribeVideos();
+        const { collection, onSnapshot } = window._fb;
+        unsubscribeVideos = onSnapshot(
+          collection(db, "users", uid, "videos"),
+          { includeMetadataChanges: true },
+          (snapshot) => {
+            const committed = snapshot.docs.filter(
+              (d) => !d.metadata.hasPendingWrites,
+            );
+            const source = committed.length > 0 ? committed : snapshot.docs;
+            videos = source.map((d) => ({ id: d.id, ...d.data() }));
+            videos.sort(
+              (a, b) =>
+                (b.collectedAt?.seconds || 0) - (a.collectedAt?.seconds || 0),
+            );
+            requestAnimationFrame(() => {
+              try {
+                renderRecentVideos(videos);
+              } catch (e) {
+                console.warn(e);
+              }
+              try {
+                searchAndRender(
+                  document.getElementById("organize-search")?.value || "",
+                );
+              } catch (e) {
+                console.warn(e);
+              }
+            });
+            console.log(
+              "Firebase synced:",
+              videos.length,
+              "videos for user:",
+              uid,
+            );
+          },
+        );
+      }
+
+      function showLoginScreen() {
+        document.getElementById("login-screen").style.display = "flex";
+        document.getElementById("user-profile").classList.add("hidden");
+        document.getElementById("signout-btn").classList.add("hidden");
+      }
+
+      function showApp(user) {
+        document.getElementById("login-screen").style.display = "none";
+        // Show user profile in sidebar
+        const profile = document.getElementById("user-profile");
+        const avatar = document.getElementById("user-avatar");
+        const name = document.getElementById("user-name");
+        const email = document.getElementById("user-email");
+        const signoutBtn = document.getElementById("signout-btn");
+        if (user.photoURL) avatar.src = user.photoURL;
+        else
+          avatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email)}&background=6366f1&color=fff`;
+        name.textContent = user.displayName || "User";
+        email.textContent = user.email;
+        profile.classList.remove("hidden");
+        signoutBtn.classList.remove("hidden");
+        navigateTo("dashboard");
+      }
+
+      async function signInWithGoogle() {
+        const btn = document.getElementById("google-signin-btn");
+        const loading = document.getElementById("login-loading");
+        const error = document.getElementById("login-error");
+        btn.classList.add("hidden");
+        loading.classList.remove("hidden");
+        error.classList.add("hidden");
+        try {
+          const { auth, GoogleAuthProvider, signInWithPopup } = window._auth;
+          const provider = new GoogleAuthProvider();
+          await signInWithPopup(auth, provider);
+          // onAuthStateChanged will handle the rest
+        } catch (e) {
+          btn.classList.remove("hidden");
+          loading.classList.add("hidden");
+          error.classList.remove("hidden");
+          document.getElementById("login-error-msg").textContent =
+            e.message.includes("popup-closed")
+              ? "Sign-in cancelled."
+              : e.message;
+        }
+      }
+
+      async function signOut() {
+        try {
+          const { auth } = window._auth;
+          const { signOut: fbSignOut } = require("firebase/auth");
+          await fbSignOut(auth);
+        } catch (e) {
+          console.error(e);
         }
       }
 
@@ -2353,7 +2598,10 @@ const firebaseConfig = {
 
             if (transcript) {
               const { updateDoc, doc } = window._fb;
-              await updateDoc(doc(db, "videos", vid), { transcript });
+              await updateDoc(
+                doc(db, "users", currentUser.uid, "videos", vid),
+                { transcript },
+              );
               const localVid = videos.find((v) => v.id === vid);
               if (localVid) localVid.transcript = transcript;
               const lbl = document.getElementById("fetch-transcript-label");
@@ -2482,9 +2730,10 @@ const firebaseConfig = {
             data.content?.[0]?.text || "Could not generate summary.";
           const key = summaryLang === "ko" ? "summaryKo" : "summary";
           const { updateDoc, doc } = window._fb;
-          await updateDoc(doc(db, "videos", selectedVideoId), {
-            [key]: summary,
-          });
+          await updateDoc(
+            doc(db, "users", currentUser.uid, "videos", selectedVideoId),
+            { [key]: summary },
+          );
           const localVid = videos.find((v) => v.id === selectedVideoId);
           if (localVid) localVid[key] = summary;
           showSummaryContent(summary);
@@ -2591,9 +2840,10 @@ const firebaseConfig = {
           // Save to Firebase
           const key = isEnKo ? "transcriptKo" : "transcriptEn";
           const { updateDoc, doc } = window._fb;
-          await updateDoc(doc(db, "videos", selectedVideoId), {
-            [key]: translated,
-          });
+          await updateDoc(
+            doc(db, "users", currentUser.uid, "videos", selectedVideoId),
+            { [key]: translated },
+          );
           const localVid = videos.find((v) => v.id === selectedVideoId);
           if (localVid) localVid[key] = translated;
 
@@ -2714,8 +2964,9 @@ const firebaseConfig = {
         switchAiTab("tags");
       }
 
-      navigateTo("dashboard");
-      initFirebase().then(() => loadUniversalTags());
+      // ─── Init ─────────────────────────────────────────
+      // Don't navigate yet — wait for auth state
+      initFirebase();
     </script>
   </body>
 </html>
