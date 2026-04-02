@@ -1,6 +1,6 @@
 {
   "name": "video-collector",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "The Video Collector 비디오컬렉터",
   "main": "main.js",
   "scripts": {
@@ -65,5 +65,14 @@
     "dotenv": "^17.3.1",
     "electron-updater": "^6.8.3",
     "firebase": "^10.12.0"
+  },
+  "publish": {
+    "provider": "github",
+    "owner": "wldbs31",
+    "repo": "Video-Collector-for-Pastors"
+  },
+  "author": {
+    "name": "Jessica Jiyun Choi",
+    "email": "jessicaxjiyun@gmail.com"
   }
 }

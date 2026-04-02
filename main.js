@@ -2,6 +2,34 @@ require("dotenv").config();
 const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const path = require("path");
 
+const { autoUpdater } = require("electron-updater");
+
+// Add this inside app.whenReady().then(createWindow) — after createWindow():
+app.whenReady().then(() => {
+  createWindow();
+
+  // Check for updates 3 seconds after launch (give window time to load)
+  setTimeout(() => {
+    autoUpdater.checkForUpdatesAndNotify();
+  }, 3000);
+});
+
+// Tell autoUpdater where your GitHub releases are
+autoUpdater.setFeedURL({
+  provider: "github",
+  owner: "wldbs31",
+  repo: "Video-Collector-for-Pastors",
+  private: false,
+});
+
+autoUpdater.on("update-available", () => {
+  mainWindow.webContents.send("update-available");
+});
+
+autoUpdater.on("update-downloaded", () => {
+  mainWindow.webContents.send("update-downloaded");
+});
+
 let mainWindow;
 
 function createWindow() {
@@ -47,3 +75,8 @@ app.on("activate", () => {
 if (!app.isPackaged) {
   require("dotenv").config();
 }
+
+// Auto-updater events
+ipcMain.on("restart-to-update", () => {
+  autoUpdater.quitAndInstall();
+});
