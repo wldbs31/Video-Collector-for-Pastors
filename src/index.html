@@ -2194,28 +2194,65 @@
           `Starting ${format.toUpperCase()} download at ${selectedQuality}...`,
         );
 
+        console.log("=== DOWNLOAD DEBUG ===");
+        console.log("ytdlpBin:", ytdlpBin);
+        console.log("ffmpegBin:", ffmpegBin);
+        console.log("args:", args.join(" "));
+        console.log("resourcesPath:", process.resourcesPath);
+
+        const fs2 = require("fs");
+        console.log("yt-dlp exists:", fs2.existsSync(ytdlpBin));
+        console.log("ffmpeg exists:", fs2.existsSync(ffmpegBin));
+
         addToQueue(vid, video.title, format);
-        const proc = spawn(ytdlpBin, args);
+        const spawnEnv = {
+          ...process.env,
+          PATH: [
+            "/opt/homebrew/bin",
+            "/usr/local/bin",
+            "/usr/bin",
+            "/bin",
+            process.env.PATH || "",
+          ].join(":"),
+        };
+        const proc = spawn(ytdlpBin, args, { env: spawnEnv });
         let lastPercent = "";
         let localFilePath = "";
 
         proc.stdout.on("data", (data) => {
           const line = data.toString();
           console.log("yt-dlp:", line.trim());
-          // Capture final output filename from various yt-dlp output patterns
+
+          // Capture final output filename
           const destMatch = line.match(/\[download\] Destination: (.+)/);
           if (destMatch) localFilePath = destMatch[1].trim();
+
+          // Merger line — jump to 100% immediately
           const mergeMatch = line.match(
             /\[Merger\] Merging formats into "(.+?)"/,
           );
-          if (mergeMatch) localFilePath = mergeMatch[1].trim();
+          if (mergeMatch) {
+            localFilePath = mergeMatch[1].trim();
+            updateQueue(vid, 100, "merging...");
+            showDownloadStatus("Merging video and audio...");
+          }
+
           const ffmpegMatch = line.match(/\[ffmpeg\] Destination: (.+)/);
           if (ffmpegMatch) localFilePath = ffmpegMatch[1].trim();
+
+          // Already downloaded — jump to 100%
           const alreadyMatch = line.match(
             /\[download\] (.+?) has already been downloaded/,
           );
-          if (alreadyMatch) localFilePath = alreadyMatch[1].trim();
-          // Parse progress lines like "[download]  45.3% of 120.00MiB at 2.50MiB/s"
+          if (alreadyMatch) {
+            localFilePath = alreadyMatch[1].trim();
+            updateQueue(vid, 100, "ready");
+            showDownloadStatus(
+              "Already downloaded, merging... Please check your folder",
+            );
+          }
+
+          // Normal progress lines like "[download]  45.3% of 120.00MiB at 2.50MiB/s"
           const match = line.match(/(\d+\.\d)%.*?at\s+([\d.]+\w+\/s)/);
           if (match && match[1] !== lastPercent) {
             lastPercent = match[1];
@@ -3112,7 +3149,17 @@
         ];
 
         console.log("fetchTranscript running:", ytdlpBin, args.join(" "));
-        const proc = spawn(ytdlpBin, args);
+        const spawnEnv = {
+          ...process.env,
+          PATH: [
+            "/opt/homebrew/bin",
+            "/usr/local/bin",
+            "/usr/bin",
+            "/bin",
+            process.env.PATH || "",
+          ].join(":"),
+        };
+        const proc = spawn(ytdlpBin, args, { env: spawnEnv });
         let subtitleFile = "";
         let stdoutAll = "";
         let stderrAll = "";
