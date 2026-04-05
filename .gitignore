@@ -5,3 +5,4 @@ dist/
 .env
 extension/background.js
 src/env.js
+bin/

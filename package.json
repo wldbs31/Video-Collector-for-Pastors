@@ -16,9 +16,18 @@
       "src/**/*",
       "main.js",
       "package.json",
-      "node_modules/**/*"
+      "node_modules/**/*",
+      "bin/**/*"
     ],
-    "extraResources": [],
+    "extraResources": [
+      {
+        "from": "bin/",
+        "to": "bin/",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
     "mac": {
       "category": "public.app-category.productivity",
       "icon": "assets/icon.icns",

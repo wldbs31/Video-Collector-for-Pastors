@@ -1,16 +1,15 @@
 <!doctype html>
 <html class="light" lang="en">
   <head>
-    <script src="env.js">
-            // ─── Auto-update listener ─────────────────────────
+    <script src="env.js"></script>
+    <script>
+      // ─── Auto-update listener ─────────────────────────
       if (typeof require !== "undefined") {
         try {
           const { ipcRenderer } = require("electron");
-
           ipcRenderer.on("update-available", () => {
             showUpdateBanner("A new update is downloading...", false);
           });
-
           ipcRenderer.on("update-downloaded", () => {
             showUpdateBanner("Update ready! Restart to install.", true);
           });
@@ -20,30 +19,34 @@
       function showUpdateBanner(msg, showRestart) {
         const existing = document.getElementById("update-banner");
         if (existing) existing.remove();
-
         const banner = document.createElement("div");
         banner.id = "update-banner";
-        banner.className = "fixed bottom-6 right-6 z-50 flex items-center gap-4 px-5 py-3.5 rounded-2xl shadow-xl border border-indigo-100 bg-white";
+        banner.className =
+          "fixed bottom-6 right-6 z-50 flex items-center gap-4 px-5 py-3.5 rounded-2xl shadow-xl border border-indigo-100 bg-white";
         banner.innerHTML = `
-          <div class="w-8 h-8 rounded-xl accent-gradient flex items-center justify-center shrink-0">
-            <span class="material-symbols-outlined text-white text-sm"
-                  style="font-variation-settings:'FILL' 1">system_update</span>
-          </div>
-          <div>
-            <p class="text-sm font-bold text-primary">${msg}</p>
-            <p class="text-[10px] text-gray-400">The Video Collector</p>
-          </div>
-          ${showRestart ? `
-          <button onclick="require('electron').ipcRenderer.send('restart-to-update')"
-                  class="px-4 py-2 rounded-xl collect-btn-gradient text-white text-xs font-bold hover:opacity-90 transition-all">
-            Restart
-          </button>` : `
-          <div class="w-5 h-5 rounded-full border-2 border-indigo-200 border-t-indigo-500 animate-spin"></div>`}
-          <button onclick="this.parentElement.remove()"
-                  class="text-gray-300 hover:text-gray-500 transition-colors ml-1">
-            <span class="material-symbols-outlined text-sm">close</span>
-          </button>
-        `;
+      <div class="w-8 h-8 rounded-xl accent-gradient flex items-center justify-center shrink-0">
+        <span class="material-symbols-outlined text-white text-sm"
+              style="font-variation-settings:'FILL' 1">system_update</span>
+      </div>
+      <div>
+        <p class="text-sm font-bold text-primary">${msg}</p>
+        <p class="text-[10px] text-gray-400">The Video Collector</p>
+      </div>
+      ${
+        showRestart
+          ? `
+      <button onclick="require('electron').ipcRenderer.send('restart-to-update')"
+              class="px-4 py-2 rounded-xl collect-btn-gradient text-white text-xs font-bold hover:opacity-90 transition-all">
+        Restart
+      </button>`
+          : `
+      <div class="w-5 h-5 rounded-full border-2 border-indigo-200 border-t-indigo-500 animate-spin"></div>`
+      }
+      <button onclick="this.parentElement.remove()"
+              class="text-gray-300 hover:text-gray-500 transition-colors ml-1">
+        <span class="material-symbols-outlined text-sm">close</span>
+      </button>
+    `;
         document.body.appendChild(banner);
       }
     </script>
@@ -2163,6 +2166,8 @@
                 "--no-abort-on-error",
                 "-o",
                 outputTemplate,
+                "--extractor-args",
+                "youtube:player_client=web,default",
               ]
             : [
                 cleanUrl,
@@ -2180,10 +2185,11 @@
                 "--no-abort-on-error",
                 "--postprocessor-args",
                 "ffmpeg:-c:v libx264 -c:a aac -movflags +faststart",
+                "--extractor-args",
+                "youtube:player_client=web,default",
                 "-o",
                 outputTemplate,
               ];
-
         showDownloadStatus(
           `Starting ${format.toUpperCase()} download at ${selectedQuality}...`,
         );
@@ -2904,11 +2910,61 @@
         }
       }
 
-      // ─── Cross-platform binary paths ─────────────────
       function getBinPaths() {
         const path = require("path");
         const fs = require("fs");
+        const { execSync } = require("child_process");
         const platform = process.platform;
+
+        // ── Bundled binaries (packaged app) ──────────────
+        // In a built app, extraResources land in process.resourcesPath/bin/
+        // In dev, fall back to the project's own bin/ folder
+        const resourcesPath =
+          process.resourcesPath || path.join(__dirname, "..");
+
+        const bundledYtdlp =
+          platform === "win32"
+            ? path.join(resourcesPath, "bin", "yt-dlp-win.exe")
+            : path.join(resourcesPath, "bin", "yt-dlp-mac");
+
+        const bundledFfmpeg =
+          platform === "win32"
+            ? path.join(resourcesPath, "bin", "ffmpeg-win.exe")
+            : path.join(resourcesPath, "bin", "ffmpeg-mac");
+
+        // If bundled binaries exist, always use them
+        if (fs.existsSync(bundledYtdlp) && fs.existsSync(bundledFfmpeg)) {
+          console.log("Using bundled binaries:", {
+            bundledYtdlp,
+            bundledFfmpeg,
+          });
+          return { ytdlp: bundledYtdlp, ffmpeg: bundledFfmpeg };
+        }
+
+        // ── Dev fallback — system binaries ───────────────
+        function getFullPath() {
+          const base = process.env.PATH || "";
+          const extras =
+            platform === "win32"
+              ? []
+              : ["/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin"];
+          return [...extras, base].join(path.delimiter);
+        }
+
+        function which(cmd) {
+          try {
+            return execSync(
+              platform === "win32" ? `where ${cmd}` : `which ${cmd}`,
+              { env: { ...process.env, PATH: getFullPath() } },
+            )
+              .toString()
+              .trim()
+              .split("\n")[0]
+              .trim();
+          } catch (e) {
+            return null;
+          }
+        }
 
         if (platform === "win32") {
           const base =
@@ -2922,11 +2978,6 @@
               "yt-dlp.exe",
             ),
             "C:\\yt-dlp\\yt-dlp.exe",
-            path.join(
-              process.env.ProgramFiles || "C:\\Program Files",
-              "yt-dlp",
-              "yt-dlp.exe",
-            ),
           ];
           const winFfmpeg = [
             path.join(
@@ -2936,12 +2987,6 @@
               "ffmpeg.exe",
             ),
             "C:\\ffmpeg\\bin\\ffmpeg.exe",
-            path.join(
-              process.env.ProgramFiles || "C:\\Program Files",
-              "ffmpeg",
-              "bin",
-              "ffmpeg.exe",
-            ),
           ];
           const ytdlp =
             winYtdlp.find((p) => {
@@ -2950,7 +2995,9 @@
               } catch {
                 return false;
               }
-            }) || "yt-dlp";
+            }) ||
+            which("yt-dlp") ||
+            "yt-dlp.exe";
           const ffmpeg =
             winFfmpeg.find((p) => {
               try {
@@ -2958,16 +3005,42 @@
               } catch {
                 return false;
               }
-            }) || "ffmpeg";
+            }) ||
+            which("ffmpeg") ||
+            "ffmpeg.exe";
           return { ytdlp, ffmpeg };
         } else {
-          // macOS — check Apple Silicon first, then Intel
-          const ytdlp = fs.existsSync("/opt/homebrew/bin/yt-dlp")
-            ? "/opt/homebrew/bin/yt-dlp"
-            : "/usr/local/bin/yt-dlp";
-          const ffmpeg = fs.existsSync("/opt/homebrew/bin/ffmpeg")
-            ? "/opt/homebrew/bin/ffmpeg"
-            : "/usr/local/bin/ffmpeg";
+          const ytdlpCandidates = [
+            "/opt/homebrew/bin/yt-dlp",
+            "/usr/local/bin/yt-dlp",
+            "/usr/bin/yt-dlp",
+          ];
+          const ffmpegCandidates = [
+            "/opt/homebrew/bin/ffmpeg",
+            "/usr/local/bin/ffmpeg",
+            "/usr/bin/ffmpeg",
+          ];
+          const ytdlp =
+            ytdlpCandidates.find((p) => {
+              try {
+                return fs.existsSync(p);
+              } catch {
+                return false;
+              }
+            }) ||
+            which("yt-dlp") ||
+            "/opt/homebrew/bin/yt-dlp";
+          const ffmpeg =
+            ffmpegCandidates.find((p) => {
+              try {
+                return fs.existsSync(p);
+              } catch {
+                return false;
+              }
+            }) ||
+            which("ffmpeg") ||
+            "/opt/homebrew/bin/ffmpeg";
+          console.log("Using system binaries:", { ytdlp, ffmpeg });
           return { ytdlp, ffmpeg };
         }
       }
