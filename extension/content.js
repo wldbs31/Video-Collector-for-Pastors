@@ -2,15 +2,20 @@
 function getVideoInfo() {
   const url = window.location.href;
   const title =
-    document.querySelector("h1.ytd-watch-metadata yt-formatted-string, h1.style-scope.ytd-watch-metadata")?.textContent?.trim() ||
-    document.title.replace(" - YouTube", "").trim();
+    document
+      .querySelector(
+        "h1.ytd-watch-metadata yt-formatted-string, h1.style-scope.ytd-watch-metadata",
+      )
+      ?.textContent?.trim() || document.title.replace(" - YouTube", "").trim();
 
   // Handle both regular and Shorts URLs
   const shortsMatch = url.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
   const regularMatch = new URLSearchParams(window.location.search).get("v");
   const videoId = shortsMatch ? shortsMatch[1] : regularMatch;
 
-  const thumbnail = videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : "";
+  const thumbnail = videoId
+    ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+    : "";
   const cleanUrl = videoId ? `https://www.youtube.com/watch?v=${videoId}` : url;
   return { url: cleanUrl, title, thumbnail, videoId };
 }
@@ -70,13 +75,21 @@ function injectButton() {
   const btn = createCollectButton();
   document.body.appendChild(btn);
 
+  // Hide button when video goes fullscreen, show again when exiting
+  document.addEventListener("fullscreenchange", () => {
+    const b = document.getElementById("ivory-collect-btn");
+    if (b) b.style.display = document.fullscreenElement ? "none" : "flex";
+  });
+
   btn.addEventListener("click", () => {
     if (collected) return;
 
     const info = getVideoInfo();
     if (!info.videoId) {
       btn.querySelector("span").textContent = "Not a video";
-      setTimeout(() => { btn.querySelector("span").textContent = "Collect"; }, 2000);
+      setTimeout(() => {
+        btn.querySelector("span").textContent = "Collect";
+      }, 2000);
       return;
     }
 
@@ -88,12 +101,18 @@ function injectButton() {
         return;
       }
 
-      chrome.runtime.sendMessage({ type: "COLLECT_VIDEO", payload: info }, (response) => {
-        if (chrome.runtime.lastError) {
-          console.warn("sendMessage error:", chrome.runtime.lastError.message);
-          // Still show success if the message was sent — background may have handled it
-        }
-      });
+      chrome.runtime.sendMessage(
+        { type: "COLLECT_VIDEO", payload: info },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            console.warn(
+              "sendMessage error:",
+              chrome.runtime.lastError.message,
+            );
+            // Still show success if the message was sent — background may have handled it
+          }
+        },
+      );
 
       // Visual feedback
       collected = true;
@@ -107,7 +126,6 @@ function injectButton() {
         btn.style.pointerEvents = "auto";
         collected = false;
       }, 3000);
-
     } catch (e) {
       console.warn("Collect error:", e.message);
       btn.querySelector("span").textContent = "Reload page ↺";
@@ -130,7 +148,10 @@ let lastUrl = location.href;
 new MutationObserver(() => {
   if (location.href !== lastUrl) {
     lastUrl = location.href;
-    if (location.href.includes("/watch") || location.href.includes("/shorts/")) {
+    if (
+      location.href.includes("/watch") ||
+      location.href.includes("/shorts/")
+    ) {
       setTimeout(injectButton, 1500);
     } else {
       const btn = document.getElementById("ivory-collect-btn");

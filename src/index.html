@@ -603,7 +603,7 @@
           Sign Out
         </button>
         <p class="text-[10px] text-gray-400 font-medium px-2">
-          v1.0.0 · Video Downloader App
+          v1.0.3 · Video Downloader App
         </p>
       </div>
     </aside>
@@ -2147,13 +2147,17 @@
           ? `best[ext=mp4]/best`
           : `bestvideo[ext=mp4][height<=${parseInt(selectedQuality)}]+bestaudio[ext=m4a]/bestvideo[height<=${parseInt(selectedQuality)}]+bestaudio/bestvideo+bestaudio/best[ext=mp4]/best`;
 
+        // On Windows, try chrome first then edge as fallback
+        const browserCookie =
+          process.platform === "win32" ? "chrome" : "chrome";
+
         const args =
           format === "mp3"
             ? [
                 cleanUrl,
                 "--no-playlist",
                 "--cookies-from-browser",
-                "chrome",
+                browserCookie,
                 "-x",
                 "--audio-format",
                 "mp3",
@@ -2164,16 +2168,16 @@
                 "--extractor-retries",
                 "3",
                 "--no-abort-on-error",
-                "-o",
-                outputTemplate,
                 "--extractor-args",
                 "youtube:player_client=web,default",
+                "-o",
+                outputTemplate,
               ]
             : [
                 cleanUrl,
                 "--no-playlist",
                 "--cookies-from-browser",
-                "chrome",
+                browserCookie,
                 "-f",
                 videoFormat,
                 "--merge-output-format",
@@ -2190,6 +2194,7 @@
                 "-o",
                 outputTemplate,
               ];
+
         showDownloadStatus(
           `Starting ${format.toUpperCase()} download at ${selectedQuality}...`,
         );
@@ -2217,6 +2222,7 @@
         };
         const proc = spawn(ytdlpBin, args, { env: spawnEnv });
         let lastPercent = "";
+        let lastStderr = "";
         let localFilePath = "";
 
         proc.stdout.on("data", (data) => {
@@ -2262,10 +2268,102 @@
         });
 
         proc.stderr.on("data", (data) => {
+          lastStderr += data.toString();
           console.error("yt-dlp stderr:", data.toString());
         });
 
         proc.on("close", async (code) => {
+          // Windows cookie fallback — if Chrome fails, retry with Edge
+          if (
+            code !== 0 &&
+            process.platform === "win32" &&
+            lastStderr.includes("Could not copy Chrome cookie")
+          ) {
+            showDownloadStatus("Chrome cookies failed, retrying with Edge...");
+            const fallbackArgs = args.map((a) => (a === "chrome" ? "edge" : a));
+            const proc2 = spawn(ytdlpBin, fallbackArgs, { env: spawnEnv });
+            let localFilePath2 = "";
+            proc2.stdout.on("data", (data) => {
+              const line = data.toString();
+              console.log("yt-dlp edge retry:", line.trim());
+              const match = line.match(/(\d+\.\d)%.*?at\s+([\d.]+\w+\/s)/);
+              if (match) {
+                updateQueue(vid, parseFloat(match[1]), match[2]);
+                showDownloadStatus(
+                  `Downloading... ${match[1]}% at ${match[2]}`,
+                );
+              }
+              const mergeMatch = line.match(
+                /\[Merger\] Merging formats into "(.+?)"/,
+              );
+              if (mergeMatch) {
+                localFilePath2 = mergeMatch[1].trim();
+                updateQueue(vid, 100, "merging...");
+              }
+              const alreadyMatch = line.match(
+                /\[download\] (.+?) has already been downloaded/,
+              );
+              if (alreadyMatch) {
+                localFilePath2 = alreadyMatch[1].trim();
+                updateQueue(vid, 100, "ready");
+              }
+            });
+            proc2.stderr.on("data", (d) =>
+              console.error("edge stderr:", d.toString()),
+            );
+            proc2.on("close", async (code2) => {
+              removeFromQueue(vid, code2 === 0);
+              if (code2 === 0) {
+                if (!localFilePath2) {
+                  const ext = format === "mp3" ? "mp3" : "mp4";
+                  localFilePath2 = require("path").join(
+                    destPath,
+                    `${video.title}.${ext}`,
+                  );
+                }
+                showDownloadStatus(`✓ Saved to ${destPath}`);
+                selectedVideoFilePath = localFilePath2;
+                const localVid = videos.find((v) => v.id === vid);
+                if (localVid) {
+                  localVid.downloaded = true;
+                  localVid.format = format;
+                  localVid.quality = selectedQuality;
+                  localVid.localFile = localFilePath2;
+                }
+                requestAnimationFrame(() => {
+                  try {
+                    renderRecentVideos(videos);
+                  } catch (e) {}
+                  try {
+                    searchAndRender(
+                      document.getElementById("organize-search")?.value || "",
+                    );
+                  } catch (e) {}
+                });
+                try {
+                  const { updateDoc, doc } = window._fb;
+                  await updateDoc(
+                    doc(db, "users", currentUser.uid, "videos", vid),
+                    {
+                      downloaded: true,
+                      format,
+                      quality: selectedQuality,
+                      downloadPath: destPath,
+                      localFile: localFilePath2,
+                    },
+                  );
+                } catch (e) {
+                  console.error(e);
+                }
+              } else {
+                showDownloadStatus(
+                  "Download failed. Please close Chrome/Edge and try again, or reopen the app.",
+                );
+              }
+            });
+            return;
+          }
+
           removeFromQueue(vid, code === 0);
           if (code === 0) {
             // If localFilePath is still empty, construct it from the title

@@ -1,6 +1,6 @@
 {
   "name": "video-collector",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "The Video Collector 비디오컬렉터",
   "main": "main.js",
   "scripts": {
