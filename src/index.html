@@ -602,8 +602,11 @@
           <span class="material-symbols-outlined text-sm">logout</span>
           Sign Out
         </button>
-        <p class="text-[10px] text-gray-400 font-medium px-2">
-          v1.0.3 · Video Downloader App
+        <p
+          id="sidebar-version"
+          class="text-[10px] text-gray-400 font-medium px-2"
+        >
+          Video Downloader App
         </p>
       </div>
     </aside>
@@ -1520,9 +1523,10 @@
         class="px-8 py-5 flex justify-between items-center bg-white/30 backdrop-blur-sm border-t border-slate-100"
       >
         <div
+          id="footer-version"
           class="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em]"
         >
-          System v1.0.0 · Jessica Jiyun Choi
+          Jessica Jiyun Choi
         </div>
         <div class="flex gap-8">
           <a
@@ -1553,6 +1557,21 @@
       const ENV = window.__ENV__ || {};
       const ANTHROPIC_API_KEY =
         ENV.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY || "";
+
+      // Escape YouTube/user-supplied text before injecting into innerHTML
+      function esc(s) {
+        return String(s ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      }
 
       let currentScreen = "dashboard";
       let selectedQuality = "1080p";
@@ -1698,15 +1717,19 @@
           const cleanUrl = normalizeYouTubeUrl(url);
           try {
             const { spawn } = require("child_process");
-            const proc = spawn(getBinPaths().ytdlp, [
-              "--get-title",
-              "--no-playlist",
-              "--cookies-from-browser",
-              "chrome",
-              "--socket-timeout",
-              "10",
-              cleanUrl,
-            ]);
+            // No browser cookies here — a title fetch rarely needs them and
+            // skipping them avoids the Chrome cookie-lock error on Windows
+            const proc = spawn(
+              getBinPaths().ytdlp,
+              [
+                "--get-title",
+                "--no-playlist",
+                "--socket-timeout",
+                "10",
+                cleanUrl,
+              ],
+              { env: buildSpawnEnv(), windowsHide: true },
+            );
             let output = "";
             proc.stdout.on("data", (d) => {
               output += d.toString();
@@ -1770,7 +1793,7 @@
     </div>
   </div>
   <div onclick="openDetail('${v.id}')" class="p-4 space-y-2">
-    <h4 class="font-headline font-bold text-sm text-primary truncate">${v.title}</h4>
+    <h4 class="font-headline font-bold text-sm text-primary truncate">${esc(v.title)}</h4>
     <div class="flex items-center gap-2 flex-wrap">
       ${(v.tags || []).map((t) => `<span class="px-2 py-0.5 rounded-full bg-primary/5 text-[10px] text-primary font-bold">#${t}</span>`).join("")}
       <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">${v.format || "mp4"} · ${v.quality || "1080p"}</span>
@@ -1829,7 +1852,9 @@
         const thumb = document.getElementById("detail-thumb");
         const overlay = document.getElementById("player-overlay");
         if (selectedVideoFilePath) {
-          player.src = `file://${selectedVideoFilePath}`;
+          // pathToFileURL handles Windows drive letters/backslashes and
+          // special characters (#, ?) in filenames
+          player.src = require("url").pathToFileURL(selectedVideoFilePath).href;
           player.style.display = "block";
           thumb.style.display = "none";
           overlay.style.display = "none";
@@ -1940,7 +1965,7 @@
             ([id, d]) => `
           <div class="bg-white/60 rounded-lg p-3 space-y-1.5" data-vid="${id}">
             <div class="flex items-center justify-between gap-2">
-              <p class="text-[10px] font-bold text-primary truncate flex-1">${d.title}</p>
+              <p class="text-[10px] font-bold text-primary truncate flex-1">${esc(d.title)}</p>
               <span class="text-[10px] font-mono font-bold shrink-0 ${d.complete ? "text-green-500" : "text-secondary"}">${d.complete ? "✓" : Math.round(d.percent) + "%"}</span>
             </div>
             <div class="h-1 w-full bg-slate-100 rounded-full overflow-hidden">
@@ -2119,6 +2144,45 @@
         btn.classList.remove("border-slate-200", "text-slate-500");
       }
 
+      // ─── yt-dlp spawn helpers ─────────────────────────
+      // Env for spawned binaries: correct PATH separator per platform, with
+      // the bundled bin dir first so yt-dlp finds the bundled deno runtime
+      // (needed to solve YouTube's n-challenge).
+      function buildSpawnEnv() {
+        const path = require("path");
+        const { binDir } = getBinPaths();
+        const extras = [];
+        if (binDir) extras.push(binDir);
+        if (process.platform === "win32") {
+          const home = process.env.USERPROFILE || "";
+          const local = process.env.LOCALAPPDATA || "";
+          if (home) extras.push(path.join(home, ".deno", "bin"));
+          if (local)
+            extras.push(path.join(local, "Microsoft", "WinGet", "Links"));
+          if (home) extras.push(path.join(home, "scoop", "shims"));
+        } else {
+          extras.push("/opt/homebrew/bin", "/usr/local/bin", "/usr/bin", "/bin");
+        }
+        return {
+          ...process.env,
+          PATH: [...extras, process.env.PATH || ""].join(path.delimiter),
+        };
+      }
+
+      // Cookie strategies, best to worst. Chrome cookie DBs are often locked
+      // or unreadable on Windows, so fall back to Edge, then to no cookies.
+      function cookieStrategies() {
+        return process.platform === "win32"
+          ? ["chrome", "edge", "none"]
+          : ["chrome", "none"];
+      }
+
+      function cookieArgs(strategy) {
+        return strategy === "none"
+          ? []
+          : ["--cookies-from-browser", strategy];
+      }
+
       // ─── Download ─────────────────────────────────────
       async function downloadAs(format, id) {
         const vid = id || selectedVideoId;
@@ -2129,7 +2193,6 @@
         const video = videos.find((v) => v.id === vid);
         if (!video) return;
 
-        // Strip playlist/index params so only the single video downloads
         // Normalize URL — handles Shorts, playlists, etc.
         const cleanUrl = normalizeYouTubeUrl(video.url);
         const isShort = isShorts(video.url);
@@ -2147,17 +2210,12 @@
           ? `best[ext=mp4]/best`
           : `bestvideo[ext=mp4][height<=${parseInt(selectedQuality)}]+bestaudio[ext=m4a]/bestvideo[height<=${parseInt(selectedQuality)}]+bestaudio/bestvideo+bestaudio/best[ext=mp4]/best`;
 
-        // On Windows, try chrome first then edge as fallback
-        const browserCookie =
-          process.platform === "win32" ? "chrome" : "chrome";
-
-        const args =
+        const baseArgs =
           format === "mp3"
             ? [
                 cleanUrl,
                 "--no-playlist",
-                "--cookies-from-browser",
-                browserCookie,
+                "--newline",
                 "-x",
                 "--audio-format",
                 "mp3",
@@ -2168,16 +2226,13 @@
                 "--extractor-retries",
                 "3",
                 "--no-abort-on-error",
-                "--extractor-args",
-                "youtube:player_client=web,default",
                 "-o",
                 outputTemplate,
               ]
             : [
                 cleanUrl,
                 "--no-playlist",
-                "--cookies-from-browser",
-                browserCookie,
+                "--newline",
                 "-f",
                 videoFormat,
                 "--merge-output-format",
@@ -2187,10 +2242,6 @@
                 "--extractor-retries",
                 "3",
                 "--no-abort-on-error",
-                "--postprocessor-args",
-                "ffmpeg:-c:v libx264 -c:a aac -movflags +faststart",
-                "--extractor-args",
-                "youtube:player_client=web,default",
                 "-o",
                 outputTemplate,
               ];
@@ -2198,230 +2249,155 @@
         showDownloadStatus(
           `Starting ${format.toUpperCase()} download at ${selectedQuality}...`,
         );
-
         console.log("=== DOWNLOAD DEBUG ===");
         console.log("ytdlpBin:", ytdlpBin);
         console.log("ffmpegBin:", ffmpegBin);
-        console.log("args:", args.join(" "));
-        console.log("resourcesPath:", process.resourcesPath);
-
-        const fs2 = require("fs");
-        console.log("yt-dlp exists:", fs2.existsSync(ytdlpBin));
-        console.log("ffmpeg exists:", fs2.existsSync(ffmpegBin));
+        console.log(
+          "yt-dlp exists:",
+          require("fs").existsSync(ytdlpBin),
+          "| ffmpeg exists:",
+          require("fs").existsSync(ffmpegBin),
+        );
 
         addToQueue(vid, video.title, format);
-        const spawnEnv = {
-          ...process.env,
-          PATH: [
-            "/opt/homebrew/bin",
-            "/usr/local/bin",
-            "/usr/bin",
-            "/bin",
-            process.env.PATH || "",
-          ].join(":"),
-        };
-        const proc = spawn(ytdlpBin, args, { env: spawnEnv });
-        let lastPercent = "";
-        let lastStderr = "";
-        let localFilePath = "";
+        const spawnEnv = buildSpawnEnv();
+        const strategies = cookieStrategies();
 
-        proc.stdout.on("data", (data) => {
-          const line = data.toString();
-          console.log("yt-dlp:", line.trim());
-
-          // Capture final output filename
-          const destMatch = line.match(/\[download\] Destination: (.+)/);
-          if (destMatch) localFilePath = destMatch[1].trim();
-
-          // Merger line — jump to 100% immediately
-          const mergeMatch = line.match(
-            /\[Merger\] Merging formats into "(.+?)"/,
-          );
-          if (mergeMatch) {
-            localFilePath = mergeMatch[1].trim();
-            updateQueue(vid, 100, "merging...");
-            showDownloadStatus("Merging video and audio...");
+        const finishSuccess = async (localFilePath) => {
+          removeFromQueue(vid, true);
+          if (!localFilePath) {
+            const ext = format === "mp3" ? "mp3" : "mp4";
+            localFilePath = path.join(destPath, `${video.title}.${ext}`);
+          } else if (format === "mp3") {
+            // Final file is always .mp3 even if we only saw the pre-extraction name
+            localFilePath = localFilePath.replace(/\.[^.\\/]+$/, ".mp3");
           }
-
-          const ffmpegMatch = line.match(/\[ffmpeg\] Destination: (.+)/);
-          if (ffmpegMatch) localFilePath = ffmpegMatch[1].trim();
-
-          // Already downloaded — jump to 100%
-          const alreadyMatch = line.match(
-            /\[download\] (.+?) has already been downloaded/,
-          );
-          if (alreadyMatch) {
-            localFilePath = alreadyMatch[1].trim();
-            updateQueue(vid, 100, "ready");
-            showDownloadStatus(
-              "Already downloaded, merging... Please check your folder",
-            );
+          showDownloadStatus(`✓ Saved to ${destPath}`);
+          if (vid === selectedVideoId) selectedVideoFilePath = localFilePath;
+          // Immediately update local state so checkmark shows without waiting for Firestore
+          const localVid = videos.find((v) => v.id === vid);
+          if (localVid) {
+            localVid.downloaded = true;
+            localVid.format = format;
+            localVid.quality = selectedQuality;
+            localVid.localFile = localFilePath;
           }
-
-          // Normal progress lines like "[download]  45.3% of 120.00MiB at 2.50MiB/s"
-          const match = line.match(/(\d+\.\d)%.*?at\s+([\d.]+\w+\/s)/);
-          if (match && match[1] !== lastPercent) {
-            lastPercent = match[1];
-            updateQueue(vid, parseFloat(match[1]), match[2]);
-            showDownloadStatus(`Downloading... ${match[1]}% at ${match[2]}`);
-          }
-        });
-
-        proc.stderr.on("data", (data) => {
-          lastStderr += data.toString();
-          console.error("yt-dlp stderr:", data.toString());
-        });
-
-        proc.on("close", async (code) => {
-          // Windows cookie fallback — if Chrome fails, retry with Edge
-          if (
-            code !== 0 &&
-            process.platform === "win32" &&
-            lastStderr.includes("Could not copy Chrome cookie")
-          ) {
-            showDownloadStatus("Chrome cookies failed, retrying with Edge...");
-            const fallbackArgs = args.map((a) => (a === "chrome" ? "edge" : a));
-            const proc2 = spawn(ytdlpBin, fallbackArgs, { env: spawnEnv });
-            let localFilePath2 = "";
-            proc2.stdout.on("data", (data) => {
-              const line = data.toString();
-              console.log("yt-dlp edge retry:", line.trim());
-              const match = line.match(/(\d+\.\d)%.*?at\s+([\d.]+\w+\/s)/);
-              if (match) {
-                updateQueue(vid, parseFloat(match[1]), match[2]);
-                showDownloadStatus(
-                  `Downloading... ${match[1]}% at ${match[2]}`,
-                );
-              }
-              const mergeMatch = line.match(
-                /\[Merger\] Merging formats into "(.+?)"/,
-              );
-              if (mergeMatch) {
-                localFilePath2 = mergeMatch[1].trim();
-                updateQueue(vid, 100, "merging...");
-              }
-              const alreadyMatch = line.match(
-                /\[download\] (.+?) has already been downloaded/,
-              );
-              if (alreadyMatch) {
-                localFilePath2 = alreadyMatch[1].trim();
-                updateQueue(vid, 100, "ready");
-              }
-            });
-            proc2.stderr.on("data", (d) =>
-              console.error("edge stderr:", d.toString()),
-            );
-            proc2.on("close", async (code2) => {
-              removeFromQueue(vid, code2 === 0);
-              if (code2 === 0) {
-                if (!localFilePath2) {
-                  const ext = format === "mp3" ? "mp3" : "mp4";
-                  localFilePath2 = require("path").join(
-                    destPath,
-                    `${video.title}.${ext}`,
-                  );
-                }
-                showDownloadStatus(`✓ Saved to ${destPath}`);
-                selectedVideoFilePath = localFilePath2;
-                const localVid = videos.find((v) => v.id === vid);
-                if (localVid) {
-                  localVid.downloaded = true;
-                  localVid.format = format;
-                  localVid.quality = selectedQuality;
-                  localVid.localFile = localFilePath2;
-                }
-                requestAnimationFrame(() => {
-                  try {
-                    renderRecentVideos(videos);
-                  } catch (e) {}
-                  try {
-                    searchAndRender(
-                      document.getElementById("organize-search")?.value || "",
-                    );
-                  } catch (e) {}
-                });
-                try {
-                  const { updateDoc, doc } = window._fb;
-                  await updateDoc(
-                    doc(db, "users", currentUser.uid, "videos", vid),
-                    {
-                      downloaded: true,
-                      format,
-                      quality: selectedQuality,
-                      downloadPath: destPath,
-                      localFile: localFilePath2,
-                    },
-                  );
-                } catch (e) {
-                  console.error(e);
-                }
-              } else {
-                showDownloadStatus(
-                  "Download failed. Please close Chrome/Edge and try again, or reopen the app.",
-                );
-              }
-            });
-            return;
-          }
-
-          removeFromQueue(vid, code === 0);
-          if (code === 0) {
-            // If localFilePath is still empty, construct it from the title
-            if (!localFilePath) {
-              const ext = format === "mp3" ? "mp3" : "mp4";
-              localFilePath = require("path").join(
-                destPath,
-                `${video.title}.${ext}`,
-              );
-            }
-            showDownloadStatus(`✓ Saved to ${destPath}`);
-            selectedVideoFilePath = localFilePath;
-            // Immediately update local state so checkmark shows without waiting for Firestore
-            const localVid = videos.find((v) => v.id === vid);
-            if (localVid) {
-              localVid.downloaded = true;
-              localVid.format = format;
-              localVid.quality = selectedQuality;
-              localVid.localFile = localFilePath;
-            }
-            // Re-render whichever screen is active
-            requestAnimationFrame(() => {
-              try {
-                renderRecentVideos(videos);
-              } catch (e) {}
-              try {
-                searchAndRender(
-                  document.getElementById("organize-search")?.value || "",
-                );
-              } catch (e) {}
-            });
+          // Re-render whichever screen is active
+          requestAnimationFrame(() => {
             try {
-              const { updateDoc, doc } = window._fb;
-              await updateDoc(
-                doc(db, "users", currentUser.uid, "videos", vid),
-                {
-                  downloaded: true,
-                  format,
-                  quality: selectedQuality,
-                  downloadPath: destPath,
-                  localFile: localFilePath,
-                },
+              renderRecentVideos(videos);
+            } catch (e) {}
+            try {
+              searchAndRender(
+                document.getElementById("organize-search")?.value || "",
               );
-            } catch (e) {
-              console.error(e);
-            }
-          } else {
-            showDownloadStatus(
-              `Download failed (exit code ${code}). Check the console for details.`,
-            );
+            } catch (e) {}
+          });
+          try {
+            const { updateDoc, doc } = window._fb;
+            await updateDoc(doc(db, "users", currentUser.uid, "videos", vid), {
+              downloaded: true,
+              format,
+              quality: selectedQuality,
+              downloadPath: destPath,
+              localFile: localFilePath,
+            });
+          } catch (e) {
+            console.error(e);
           }
-        });
+        };
 
-        proc.on("error", (err) => {
-          removeFromQueue(vid, false);
-          showDownloadStatus("Could not start yt-dlp: " + err.message);
-          console.error(err);
-        });
+        const runAttempt = (idx) => {
+          const strategy = strategies[idx];
+          const args = [...cookieArgs(strategy), ...baseArgs];
+          console.log(
+            `yt-dlp attempt ${idx + 1}/${strategies.length} (cookies: ${strategy})`,
+          );
+          const proc = spawn(ytdlpBin, args, {
+            env: spawnEnv,
+            windowsHide: true,
+          });
+          let localFilePath = "";
+          let lastPercent = "";
+          let stderrTail = "";
+
+          proc.stdout.on("data", (data) => {
+            const line = data.toString();
+            console.log("yt-dlp:", line.trim());
+
+            // Capture output filename as it evolves (download → merge → postprocess)
+            const destMatch = line.match(/\[download\] Destination: (.+)/);
+            if (destMatch) localFilePath = destMatch[1].trim();
+
+            // Merger line — jump to 100% immediately
+            const mergeMatch = line.match(
+              /\[Merger\] Merging formats into "(.+?)"/,
+            );
+            if (mergeMatch) {
+              localFilePath = mergeMatch[1].trim();
+              updateQueue(vid, 100, "merging...");
+              showDownloadStatus("Merging video and audio...");
+            }
+
+            const ppMatch = line.match(
+              /\[(?:ffmpeg|ExtractAudio)\] Destination: (.+)/,
+            );
+            if (ppMatch) localFilePath = ppMatch[1].trim();
+
+            // Already downloaded — jump to 100%
+            const alreadyMatch = line.match(
+              /\[download\] (.+?) has already been downloaded/,
+            );
+            if (alreadyMatch) {
+              localFilePath = alreadyMatch[1].trim();
+              updateQueue(vid, 100, "ready");
+              showDownloadStatus("Already downloaded — check your folder.");
+            }
+
+            // Progress lines like "[download]  45.3% of 120.00MiB at 2.50MiB/s"
+            const match = line.match(/(\d+(?:\.\d+)?)%\s+of\s+.*?at\s+(\S+)/);
+            if (match && match[1] !== lastPercent) {
+              lastPercent = match[1];
+              updateQueue(vid, parseFloat(match[1]), match[2]);
+              showDownloadStatus(`Downloading... ${match[1]}% at ${match[2]}`);
+            }
+          });
+
+          proc.stderr.on("data", (data) => {
+            stderrTail = (stderrTail + data.toString()).slice(-4000);
+            console.error("yt-dlp stderr:", data.toString());
+          });
+
+          proc.on("close", (code) => {
+            if (code === 0) {
+              finishSuccess(localFilePath);
+              return;
+            }
+            if (idx + 1 < strategies.length) {
+              const next = strategies[idx + 1];
+              showDownloadStatus(
+                next === "none"
+                  ? "Retrying without browser cookies..."
+                  : `Retrying with ${next.charAt(0).toUpperCase() + next.slice(1)} cookies...`,
+              );
+              runAttempt(idx + 1);
+              return;
+            }
+            removeFromQueue(vid, false);
+            showDownloadStatus(
+              "Download failed. Close Chrome/Edge and try again — the video may also be private or unavailable.",
+            );
+            console.error("All download attempts failed. Last stderr:", stderrTail);
+          });
+
+          proc.on("error", (err) => {
+            removeFromQueue(vid, false);
+            showDownloadStatus("Could not start yt-dlp: " + err.message);
+            console.error(err);
+          });
+        };
+
+        runAttempt(0);
       }
 
       function showDownloadStatus(msg) {
@@ -2971,7 +2947,8 @@
                   const snippet = v.transcript
                     .slice(start, end)
                     .replace(
-                      new RegExp(query, "gi"),
+                      // Escape regex metacharacters so queries like "(" don't crash
+                      new RegExp(query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"),
                       (m) =>
                         `<mark style="background:rgba(56,189,248,0.25);border-radius:2px">${m}</mark>`,
                     );
@@ -2990,7 +2967,7 @@
                 </div>
               </div>
               <div class="flex-1 min-w-0 space-y-1">
-                <h4 class="font-headline font-bold text-primary text-sm truncate group-hover:text-secondary transition-colors">${v.title}</h4>
+                <h4 class="font-headline font-bold text-primary text-sm truncate group-hover:text-secondary transition-colors">${esc(v.title)}</h4>
                 <div class="flex gap-2 flex-wrap">
                   ${(v.tags || []).map((t) => `<span class="px-2 py-0.5 rounded-full bg-primary/5 text-[10px] text-primary font-bold">#${t}</span>`).join("")}
                   <span class="text-[10px] text-slate-400 font-semibold uppercase">${v.format || "mp4"} · ${v.quality || "1080p"}</span>
@@ -3022,7 +2999,7 @@
   </div>
   <div class="absolute inset-0 bg-primary/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
   <div onclick="openDetail('${v.id}')" class="absolute bottom-4 left-4 right-4 translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
-    <p class="font-bold text-sm text-white truncate">${v.title}</p>
+    <p class="font-bold text-sm text-white truncate">${esc(v.title)}</p>
     <p class="text-[10px] font-bold text-sky-200 uppercase tracking-tight">${v.format || "mp4"} · ${v.quality || "1080p"}</p>
   </div>
   <!-- Downloaded badge -->
@@ -3051,29 +3028,22 @@
         const { execSync } = require("child_process");
         const platform = process.platform;
 
-        // ── Bundled binaries (packaged app) ──────────────
-        // In a built app, extraResources land in process.resourcesPath/bin/
-        // In dev, fall back to the project's own bin/ folder
-        const resourcesPath =
-          process.resourcesPath || path.join(__dirname, "..");
+        // ── Bundled binaries ─────────────────────────────
+        // Packaged app: extraResources land in process.resourcesPath/bin/
+        // Dev: the project's own bin/ folder (sibling of src/)
+        const ytName = platform === "win32" ? "yt-dlp-win.exe" : "yt-dlp-mac";
+        const ffName = platform === "win32" ? "ffmpeg-win.exe" : "ffmpeg-mac";
+        const binDirCandidates = [];
+        if (process.resourcesPath)
+          binDirCandidates.push(path.join(process.resourcesPath, "bin"));
+        binDirCandidates.push(path.join(__dirname, "..", "bin"));
 
-        const bundledYtdlp =
-          platform === "win32"
-            ? path.join(resourcesPath, "bin", "yt-dlp-win.exe")
-            : path.join(resourcesPath, "bin", "yt-dlp-mac");
-
-        const bundledFfmpeg =
-          platform === "win32"
-            ? path.join(resourcesPath, "bin", "ffmpeg-win.exe")
-            : path.join(resourcesPath, "bin", "ffmpeg-mac");
-
-        // If bundled binaries exist, always use them
-        if (fs.existsSync(bundledYtdlp) && fs.existsSync(bundledFfmpeg)) {
-          console.log("Using bundled binaries:", {
-            bundledYtdlp,
-            bundledFfmpeg,
-          });
-          return { ytdlp: bundledYtdlp, ffmpeg: bundledFfmpeg };
+        for (const binDir of binDirCandidates) {
+          const bundledYtdlp = path.join(binDir, ytName);
+          const bundledFfmpeg = path.join(binDir, ffName);
+          if (fs.existsSync(bundledYtdlp) && fs.existsSync(bundledFfmpeg)) {
+            return { ytdlp: bundledYtdlp, ffmpeg: bundledFfmpeg, binDir };
+          }
         }
 
         // ── Dev fallback — system binaries ───────────────
@@ -3225,8 +3195,10 @@
         const videoId = url.match(/[?&]v=([^&]+)/)?.[1] || vid;
         const outPath = path.join(tmpDir, videoId + ".%(ext)s");
         const { ytdlp: ytdlpBin, ffmpeg: ffmpegBin } = getBinPaths();
+        const spawnEnv = buildSpawnEnv();
+        const strategies = cookieStrategies();
 
-        const args = [
+        const baseArgs = [
           url,
           "--no-playlist",
           "--skip-download",
@@ -3236,8 +3208,6 @@
           "en,en-US,en-GB,en-AU,ko,ko-KR",
           "--sub-format",
           "vtt/best",
-          "--cookies-from-browser",
-          "chrome",
           "--sleep-interval",
           "2",
           "--ffmpeg-location",
@@ -3246,84 +3216,90 @@
           outPath,
         ];
 
-        console.log("fetchTranscript running:", ytdlpBin, args.join(" "));
-        const spawnEnv = {
-          ...process.env,
-          PATH: [
-            "/opt/homebrew/bin",
-            "/usr/local/bin",
-            "/usr/bin",
-            "/bin",
-            process.env.PATH || "",
-          ].join(":"),
+        // If path not captured from stdout, scan tmp dir for vtt files for this video
+        const scanForVtt = () => {
+          try {
+            const allVtts = fs
+              .readdirSync(tmpDir)
+              .filter((f) => f.startsWith(videoId) && f.endsWith(".vtt"))
+              .map((f) => path.join(tmpDir, f));
+            // Prefer English subtitles
+            const enVtt = allVtts.find(
+              (f) => f.includes(".en.") || f.includes(".en-"),
+            );
+            return enVtt || allVtts[0] || "";
+          } catch (e) {
+            console.warn("tmpDir scan failed:", e);
+            return "";
+          }
         };
-        const proc = spawn(ytdlpBin, args, { env: spawnEnv });
-        let subtitleFile = "";
-        let stdoutAll = "";
-        let stderrAll = "";
 
-        proc.stdout.on("data", (data) => {
-          const text = data.toString();
-          stdoutAll += text;
-          console.log("yt-dlp stdout:", text.trim());
-          // Capture subtitle file paths — prefer English, fall back to Korean
-          const m1 = text.match(/\[info\] Writing video subtitles to: (.+)/);
-          if (m1) {
-            const f = m1[1].trim();
-            // Only overwrite if we don't have an English file yet
-            if (!subtitleFile || f.includes(".en.") || f.includes(".en-"))
-              subtitleFile = f;
-          }
-          const m2 = text.match(/\[download\] Destination: (.+\.vtt)/);
-          if (m2) {
-            const f = m2[1].trim();
-            if (!subtitleFile || f.includes(".en.") || f.includes(".en-"))
-              subtitleFile = f;
-          }
-          const m3 = text.match(
-            /\[download\] (.+\.vtt) has already been downloaded/,
+        const attempt = (idx) => {
+          const args = [...cookieArgs(strategies[idx]), ...baseArgs];
+          console.log(
+            `fetchTranscript attempt ${idx + 1}/${strategies.length} (cookies: ${strategies[idx]})`,
           );
-          if (m3) {
-            const f = m3[1].trim();
-            if (!subtitleFile || f.includes(".en.") || f.includes(".en-"))
-              subtitleFile = f;
-          }
-        });
+          const proc = spawn(ytdlpBin, args, {
+            env: spawnEnv,
+            windowsHide: true,
+          });
+          let subtitleFile = "";
 
-        proc.stderr.on("data", (data) => {
-          stderrAll += data.toString();
-          console.warn("yt-dlp stderr:", data.toString().trim());
-        });
-
-        proc.on("close", async (code) => {
-          console.log("yt-dlp exit code:", code);
-          console.log("subtitleFile captured:", subtitleFile);
-
-          // If path not captured from stdout, scan tmp dir for vtt files for this video
-          if (!subtitleFile) {
-            try {
-              const allVtts = fs
-                .readdirSync(tmpDir)
-                .filter((f) => f.startsWith(videoId) && f.endsWith(".vtt"))
-                .map((f) => path.join(tmpDir, f));
-              // Prefer English subtitles
-              const enVtt = allVtts.find(
-                (f) => f.includes(".en.") || f.includes(".en-"),
-              );
-              subtitleFile = enVtt || allVtts[0] || "";
-              if (subtitleFile) console.log("Found vtt by scan:", subtitleFile);
-            } catch (e) {
-              console.warn("tmpDir scan failed:", e);
+          proc.stdout.on("data", (data) => {
+            const text = data.toString();
+            console.log("yt-dlp stdout:", text.trim());
+            // Capture subtitle file paths — prefer English, fall back to Korean
+            const m1 = text.match(/\[info\] Writing video subtitles to: (.+)/);
+            if (m1) {
+              const f = m1[1].trim();
+              // Only overwrite if we don't have an English file yet
+              if (!subtitleFile || f.includes(".en.") || f.includes(".en-"))
+                subtitleFile = f;
             }
-          }
+            const m2 = text.match(/\[download\] Destination: (.+\.vtt)/);
+            if (m2) {
+              const f = m2[1].trim();
+              if (!subtitleFile || f.includes(".en.") || f.includes(".en-"))
+                subtitleFile = f;
+            }
+            const m3 = text.match(
+              /\[download\] (.+\.vtt) has already been downloaded/,
+            );
+            if (m3) {
+              const f = m3[1].trim();
+              if (!subtitleFile || f.includes(".en.") || f.includes(".en-"))
+                subtitleFile = f;
+            }
+          });
 
-          if (!subtitleFile || !fs.existsSync(subtitleFile)) {
-            console.warn("No subtitle file found. stdout was:", stdoutAll);
+          proc.stderr.on("data", (data) => {
+            console.warn("yt-dlp stderr:", data.toString().trim());
+          });
+
+          proc.on("close", (code) => {
+            console.log("yt-dlp exit code:", code);
+            if (!subtitleFile) subtitleFile = scanForVtt();
+            if (subtitleFile && fs.existsSync(subtitleFile)) {
+              processSubtitleFile(subtitleFile);
+              return;
+            }
+            if (idx + 1 < strategies.length) {
+              attempt(idx + 1);
+              return;
+            }
+            console.warn("No subtitle file found after all attempts.");
             const lbl = document.getElementById("fetch-transcript-label");
             if (lbl) lbl.textContent = "No captions available";
-            return;
-          }
+          });
 
+          proc.on("error", (err) => {
+            console.error("yt-dlp spawn error:", err);
+            const lbl = document.getElementById("fetch-transcript-label");
+            if (lbl) lbl.textContent = "yt-dlp error: " + err.message;
+          });
+        };
+
+        const processSubtitleFile = async (subtitleFile) => {
           try {
             const raw = fs.readFileSync(subtitleFile, "utf8");
             console.log("VTT file size:", raw.length, "chars");
@@ -3381,13 +3357,9 @@
             const lbl = document.getElementById("fetch-transcript-label");
             if (lbl) lbl.textContent = "Parse error — check console";
           }
-        });
+        };
 
-        proc.on("error", (err) => {
-          console.error("yt-dlp spawn error:", err);
-          const lbl = document.getElementById("fetch-transcript-label");
-          if (lbl) lbl.textContent = "yt-dlp error: " + err.message;
-        });
+        attempt(0);
       }
 
       function fetchTranscriptManual() {
@@ -3438,7 +3410,7 @@
               <span class="material-symbols-outlined text-secondary text-sm">auto_awesome</span>
               <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">AI Summary</span>
             </div>
-            <p class="text-sm text-gray-700 leading-relaxed">${text}</p>
+            <p class="text-sm text-gray-700 leading-relaxed">${esc(text)}</p>
           </div>`;
         const btn = document.getElementById("summary-btn");
         if (btn)
@@ -3675,7 +3647,7 @@
           const fs = require("fs");
           const fileName = `${d.title.replace(/[^a-z0-9]/gi, "_").slice(0, 50)}_translation.doc`;
           const filePath = path.join(
-            downloadPath || os.homedir() + "/Downloads",
+            downloadPath || path.join(os.homedir(), "Downloads"),
             fileName,
           );
           fs.writeFileSync(filePath, html, "utf8");
@@ -3763,6 +3735,25 @@
       }
 
       // ─── Init ─────────────────────────────────────────
+      // Show the real app version (from package.json via the main process)
+      (async () => {
+        let v = "";
+        try {
+          v = await require("electron").ipcRenderer.invoke("get-app-version");
+        } catch (e) {}
+        if (!v) {
+          try {
+            v = require("../package.json").version;
+          } catch (e) {}
+        }
+        if (v) {
+          const sb = document.getElementById("sidebar-version");
+          if (sb) sb.textContent = `v${v} · Video Downloader App`;
+          const ft = document.getElementById("footer-version");
+          if (ft) ft.textContent = `System v${v} · Jessica Jiyun Choi`;
+        }
+      })();
+
       // Don't navigate yet — wait for auth state
       initFirebase();
     </script>

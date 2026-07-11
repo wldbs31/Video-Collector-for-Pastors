@@ -1,12 +1,13 @@
 {
   "name": "video-collector",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "The Video Collector 비디오컬렉터",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build:mac": "node scripts/inject-env.js && electron-builder --mac --publish never",
-    "build:win": "node scripts/inject-env.js && electron-builder --win --publish never"
+    "prepare-bins": "node scripts/download-binaries.js",
+    "build:mac": "node scripts/download-binaries.js && node scripts/inject-env.js && electron-builder --mac --publish never",
+    "build:win": "node scripts/download-binaries.js && node scripts/inject-env.js && electron-builder --win --publish never"
   },
   "build": {
     "appId": "com.videocollector.app",
@@ -16,17 +17,7 @@
       "src/**/*",
       "main.js",
       "package.json",
-      "node_modules/**/*",
-      "bin/**/*"
-    ],
-    "extraResources": [
-      {
-        "from": "bin/",
-        "to": "bin/",
-        "filter": [
-          "**/*"
-        ]
-      }
+      "node_modules/**/*"
     ],
     "mac": {
       "category": "public.app-category.productivity",
@@ -39,7 +30,18 @@
           ]
         }
       ],
-      "darkModeSupport": true
+      "darkModeSupport": true,
+      "extraResources": [
+        {
+          "from": "bin/",
+          "to": "bin/",
+          "filter": [
+            "yt-dlp-mac",
+            "ffmpeg-mac",
+            "deno"
+          ]
+        }
+      ]
     },
     "win": {
       "icon": "assets/icon.ico",
@@ -48,6 +50,17 @@
           "target": "nsis",
           "arch": [
             "x64"
+          ]
+        }
+      ],
+      "extraResources": [
+        {
+          "from": "bin/",
+          "to": "bin/",
+          "filter": [
+            "yt-dlp-win.exe",
+            "ffmpeg-win.exe",
+            "deno.exe"
           ]
         }
       ]

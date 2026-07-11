@@ -80,9 +80,23 @@ cd Video-Collector-for-Pastors
 # Install dependencies
 npm install
 
+# Download bundled binaries (yt-dlp, ffmpeg, deno) — required before first run/build
+npm run prepare-bins
+
 # Run the app
 npm start
+
+# Build installers
+npm run build:mac   # macOS arm64 DMG
+npm run build:win   # Windows x64 NSIS installer (run on Windows)
 ```
+
+### Releasing a new version
+
+1. Bump `version` in `package.json`
+2. Commit, then tag and push: `git tag v1.0.4 && git push origin main --tags`
+3. GitHub Actions builds both installers and publishes a **draft GitHub Release** with the auto-update metadata (`latest.yml`)
+4. Publish the draft release — installed apps will then auto-update (Windows; macOS users re-download since the app is unsigned)
 
 ---
 
@@ -90,7 +104,8 @@ npm start
 
 | Version | Notes |
 |---|---|
-| v1.0.3 | Latest release |
+| v1.0.4 | Bundled yt-dlp/ffmpeg/deno on both platforms, Windows cookie & path fixes, working auto-update feed |
+| v1.0.3 | Windows Chrome→Edge cookie fallback |
 | v1.0.2 | Bug fixes |
 | v1.0.1 | UI improvements |
 | v1.0.0 | Initial release |
